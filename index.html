@@ -53,7 +53,6 @@ button:hover { opacity:0.85; }
 .section.active { display:block; }
 
 #adminBtn { margin-bottom: 20px; }
-
 .messages-section {
   background: var(--card);
   border: 1px solid var(--border);
@@ -72,14 +71,6 @@ button:hover { opacity:0.85; }
   background:#f44336; color:white; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; margin-left:10px;
 }
 .delete-btn:hover { background:#d32f2f; }
-
-/* Mobile tweaks */
-@media (max-width: 480px){
-  .container { padding:20px; }
-  input, textarea, button { font-size:0.95rem; padding:10px; }
-  .message-item { flex-direction: column; }
-  .delete-btn { margin-left:0; margin-top:5px; align-self:flex-end; }
-}
 </style>
 </head>
 <body>
@@ -114,92 +105,103 @@ button:hover { opacity:0.85; }
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getDatabase, ref, push, get, remove, child } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+document.addEventListener("DOMContentLoaded", () => {
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDFNxj9dXHwC3gZ__pxlPzVObaq3pYXsHU",
-  authDomain: "message-board-11427.firebaseapp.com",
-  databaseURL: "https://message-board-11427-default-rtdb.firebaseio.com/",
-  projectId: "message-board-11427",
-  storageBucket: "message-board-11427.appspot.com",
-  messagingSenderId: "1025990128029",
-  appId: "1:1025990128029:web:8fac79b3115d113b283f74"
-};
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getDatabase, ref, push, get, remove, child } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+  const firebaseConfig = {
+    apiKey: "AIzaSyDFNxj9dXHwC3gZ__pxlPzVObaq3pYXsHU",
+    authDomain: "message-board-11427.firebaseapp.com",
+    databaseURL: "https://message-board-11427-default-rtdb.firebaseio.com/",
+    projectId: "message-board-11427",
+    storageBucket: "message-board-11427.appspot.com",
+    messagingSenderId: "1025990128029",
+    appId: "1:1025990128029:web:8fac79b3115d113b283f74"
+  };
 
-let userName = "";
-const ADMIN_PASSCODE = "8080";
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-// Step 1: Enter Name
-document.getElementById("enterNameBtn").addEventListener("click", () => {
-  const name = document.getElementById("userNameInput").value.trim();
-  if(!name) return alert("Please enter your name!");
-  userName = name;
-  document.getElementById("nameSection").classList.remove("active");
-  document.getElementById("messageSection").classList.add("active");
-});
+  let userName = "";
+  const ADMIN_PASSCODE = "8080";
 
-// Step 2: Submit Message
-document.getElementById("submitMsgBtn").addEventListener("click", async () => {
-  const msg = document.getElementById("messageInput").value.trim();
-  if(!msg) return alert("Please enter a message!");
-  
-  await push(ref(db, "messages"), {
-    name: userName,
-    message: msg,
-    timestamp: new Date().toISOString()
+  // Step 1: Enter Name
+  document.getElementById("enterNameBtn").addEventListener("click", () => {
+    const name = document.getElementById("userNameInput").value.trim();
+    if(!name) return alert("Please enter your name!");
+    userName = name;
+    document.getElementById("nameSection").classList.remove("active");
+    document.getElementById("messageSection").classList.add("active");
   });
 
-  document.getElementById("messageInput").value = "";
-  document.getElementById("messageSection").classList.remove("active");
-  document.getElementById("thankYouSection").classList.add("active");
-});
+  // Step 2: Submit Message
+  document.getElementById("submitMsgBtn").addEventListener("click", async () => {
+    const msg = document.getElementById("messageInput").value.trim();
+    if(!msg) return alert("Please enter a message!");
+    
+    try {
+      await push(ref(db, "messages"), {
+        name: userName,
+        message: msg,
+        timestamp: new Date().toISOString()
+      });
 
-// Admin View
-document.getElementById("adminBtn").addEventListener("click", async () => {
-  const code = prompt("Enter admin passcode:");
-  if(code !== ADMIN_PASSCODE) return alert("Incorrect passcode!");
-  
-  const messagesRef = ref(db, "messages");
-  const snapshot = await get(messagesRef);
-  const messages = snapshot.exists() ? snapshot.val() : {};
-  
-  const messagesSection = document.getElementById("messagesSection");
-  messagesSection.innerHTML = "";
-  
-  // Sort messages by timestamp descending
-  Object.entries(messages).sort((a,b)=> new Date(b[1].timestamp)-new Date(a[1].timestamp))
-    .forEach(([key,msg])=>{
-      const div = document.createElement("div");
-      div.className = "message-item";
+      document.getElementById("messageSection").classList.remove("active");
+      document.getElementById("thankYouSection").classList.add("active");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send message. Please check your network.");
+    }
+  });
+
+  // Admin View
+  document.getElementById("adminBtn").addEventListener("click", async () => {
+    try {
+      const code = prompt("Enter admin passcode:");
+      if(code !== ADMIN_PASSCODE) return alert("Incorrect passcode!");
       
-      const details = document.createElement("div");
-      details.className = "message-details";
-      details.innerHTML = `
-        <div class="message-name">${msg.name}</div>
-        <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
-        <div class="message-text">${msg.message}</div>
-      `;
+      const messagesRef = ref(db, "messages");
+      const snapshot = await get(messagesRef);
+      const messages = snapshot.exists() ? snapshot.val() : {};
       
-      const delBtn = document.createElement("button");
-      delBtn.className = "delete-btn";
-      delBtn.textContent = "Delete";
-      delBtn.onclick = async () => {
-        if(confirm("Delete this message?")) {
-          await remove(child(ref(db, "messages"), key));
-          div.remove();
-        }
-      };
-      
-      div.appendChild(details);
-      div.appendChild(delBtn);
-      messagesSection.appendChild(div);
-    });
-  
-  messagesSection.scrollTop = messagesSection.scrollHeight;
+      const messagesSection = document.getElementById("messagesSection");
+      messagesSection.innerHTML = "";
+
+      // Sort messages by timestamp descending
+      Object.entries(messages).sort((a,b)=> new Date(b[1].timestamp)-new Date(a[1].timestamp))
+        .forEach(([key,msg])=>{
+          const div = document.createElement("div");
+          div.className = "message-item";
+          
+          const details = document.createElement("div");
+          details.className = "message-details";
+          details.innerHTML = `
+            <div class="message-name">${msg.name}</div>
+            <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
+            <div class="message-text">${msg.message}</div>
+          `;
+          
+          const delBtn = document.createElement("button");
+          delBtn.className = "delete-btn";
+          delBtn.textContent = "Delete";
+          delBtn.onclick = async () => {
+            if(confirm("Delete this message?")) {
+              await remove(child(ref(db, "messages"), key));
+              div.remove();
+            }
+          };
+          
+          div.appendChild(details);
+          div.appendChild(delBtn);
+          messagesSection.appendChild(div);
+        });
+    } catch(err) {
+      console.error(err);
+      alert("Failed to load admin messages. Check your network or database rules.");
+    }
+  });
+
 });
 </script>
 </body>
