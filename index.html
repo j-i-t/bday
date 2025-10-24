@@ -1,244 +1,206 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Message Board</title>
-  <style>
-    :root {
-      --bg: #1c1c1e;
-      --card: #2c2c2e;
-      --border: #3a3a3c;
-      --accent: #6b7aff; /* Muted blue accent */
-      --text: #f2f2f2;
-      --muted: #a0a0a0;
-      --error: #ff5c5c;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Message Board for harveen</title>
+<style>
+:root {
+  --bg: #1c1c1e;
+  --card: #2c2c2e;
+  --border: #3a3a3c;
+  --accent: #6b7aff;
+  --text: #f2f2f2;
+  --muted: #a0a0a0;
+}
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: "Inter", system-ui, sans-serif;
-    }
+body {
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 40px 20px;
+  font-family: "Inter", system-ui, sans-serif;
+}
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
+.container {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
 
-    .container {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 30px;
-      max-width: 600px;
-      width: 100%;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
+h1 { text-align:center; margin-bottom:15px; font-weight:600; }
+p { text-align:center; color:var(--muted); margin-bottom:20px; }
 
-    h1 {
-      font-size: 1.8rem;
-      margin-bottom: 8px;
-      text-align: center;
-      font-weight: 600;
-      color: var(--text);
-    }
+input, textarea, button {
+  width:100%; padding:12px; border-radius:8px; border:1px solid var(--border); font-size:1rem; color:var(--text); background:#1f1f21; margin-bottom:15px;
+}
 
-    p {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.95rem;
-      margin-bottom: 25px;
-    }
+input:focus, textarea:focus { border-color: var(--accent); outline:none; }
 
-    input,
-    textarea,
-    button {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      font-size: 1rem;
-      color: var(--text);
-      background: #1f1f21;
-    }
+textarea { resize:vertical; min-height:80px; }
 
-    input:focus,
-    textarea:focus {
-      border-color: var(--accent);
-      outline: none;
-    }
+button { background: var(--accent); border:none; font-weight:600; cursor:pointer; color:white; transition:opacity 0.2s; }
+button:hover { opacity:0.85; }
 
-    textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
+.section { display:none; }
+.section.active { display:block; }
 
-    button {
-      background: var(--accent);
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      color: white;
-      transition: opacity 0.2s;
-    }
+#adminBtn { margin-bottom: 20px; }
 
-    button:hover {
-      opacity: 0.85;
-    }
+.messages-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 20px;
+  border-radius: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 20px;
+}
+.message-item { border-left: 4px solid var(--accent); padding: 10px; margin-bottom:10px; background:#29292c; border-radius:6px; display:flex; justify-content:space-between; align-items:flex-start; }
+.message-details { flex:1; }
+.message-name { font-weight:600; color: var(--accent); }
+.message-time { font-size:0.8rem; color:var(--muted); }
+.message-text { margin-top:5px; white-space:pre-wrap; }
+.delete-btn {
+  background:#f44336; color:white; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; margin-left:10px;
+}
+.delete-btn:hover { background:#d32f2f; }
 
-    #adminButton {
-      background: transparent;
-      color: var(--accent);
-      border: none;
-      margin-top: 15px;
-      font-size: 0.9rem;
-      text-decoration: underline;
-      cursor: pointer;
-    }
-
-    #messages {
-      margin-top: 25px;
-      display: none;
-      border-top: 1px solid var(--border);
-      padding-top: 20px;
-    }
-
-    .msg {
-      background: #1f1f21;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 12px;
-      transition: background 0.2s;
-    }
-
-    .msg:hover {
-      background: #262628;
-    }
-
-    .msg-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.9em;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-
-    .delete-btn {
-      background: none;
-      border: none;
-      color: var(--error);
-      font-size: 0.8rem;
-      cursor: pointer;
-      padding: 2px 6px;
-    }
-
-    .delete-btn:hover {
-      text-decoration: underline;
-    }
-  </style>
+/* Mobile tweaks */
+@media (max-width: 480px){
+  .container { padding:20px; }
+  input, textarea, button { font-size:0.95rem; padding:10px; }
+  .message-item { flex-direction: column; }
+  .delete-btn { margin-left:0; margin-top:5px; align-self:flex-end; }
+}
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>Message Board</h1>
-    <p>Leave a message below</p>
+<div class="container">
 
-    <form id="messageForm">
-      <input type="text" id="name" placeholder="Your name" required />
-      <textarea id="message" placeholder="Your message..." required></textarea>
-      <button type="submit">Send Message</button>
-    </form>
+  <!-- Admin Button -->
+  <button id="adminBtn">Admin View</button>
 
-    <button id="adminButton">Admin View</button>
-    <div id="messages"></div>
+  <!-- Step 1: Name -->
+  <div id="nameSection" class="section active">
+    <h1>Welcome!</h1>
+    <p>Enter your name to continue:</p>
+    <input type="text" id="userNameInput" placeholder="Your name" />
+    <button id="enterNameBtn">Next</button>
   </div>
 
-  <!-- Firebase SDK -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+  <!-- Step 2: Message -->
+  <div id="messageSection" class="section">
+    <h1>Leave a Message</h1>
+    <textarea id="messageInput" placeholder="Your message..."></textarea>
+    <button id="submitMsgBtn">Send Message</button>
+  </div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDFNxj9dXHwC3gZ__pxlPzVObaq3pYXsHU",
-      authDomain: "message-board-11427.firebaseapp.com",
-      databaseURL: "https://message-board-11427-default-rtdb.firebaseio.com",
-      projectId: "message-board-11427",
-      storageBucket: "message-board-11427.appspot.com",
-      messagingSenderId: "1025990128029",
-      appId: "1:1025990128029:web:8fac79b3115d113b283f74",
-      measurementId: "G-GFQMS3VJWC"
-    };
+  <!-- Step 3: Thank You -->
+  <div id="thankYouSection" class="section">
+    <h1>Thanks for your message! 🎉</h1>
+    <p>Your message has been submitted successfully.</p>
+  </div>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+  <!-- Admin Messages -->
+  <div id="messagesSection" class="messages-section"></div>
+</div>
 
-    const form = document.getElementById("messageForm");
-    const messagesDiv = document.getElementById("messages");
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getDatabase, ref, push, get, remove, child } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-    // 📨 Send message
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const message = document.getElementById("message").value.trim();
-      if (!name || !message) return alert("Please fill in both fields.");
+const firebaseConfig = {
+  apiKey: "AIzaSyDFNxj9dXHwC3gZ__pxlPzVObaq3pYXsHU",
+  authDomain: "message-board-11427.firebaseapp.com",
+  databaseURL: "https://message-board-11427-default-rtdb.firebaseio.com/",
+  projectId: "message-board-11427",
+  storageBucket: "message-board-11427.appspot.com",
+  messagingSenderId: "1025990128029",
+  appId: "1:1025990128029:web:8fac79b3115d113b283f74"
+};
 
-      push(ref(db, "messages"), {
-        name,
-        message,
-        timestamp: new Date().toISOString(),
-      });
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-      form.reset();
-      alert("✅ Message sent!");
-    });
+let userName = "";
+const ADMIN_PASSCODE = "8080";
 
-    // 👑 Admin view
-    document.getElementById("adminButton").addEventListener("click", () => {
-      const code = prompt("Enter admin passcode:");
-      if (code !== "8080") return alert("❌ Incorrect passcode!");
+// Step 1: Enter Name
+document.getElementById("enterNameBtn").addEventListener("click", () => {
+  const name = document.getElementById("userNameInput").value.trim();
+  if(!name) return alert("Please enter your name!");
+  userName = name;
+  document.getElementById("nameSection").classList.remove("active");
+  document.getElementById("messageSection").classList.add("active");
+});
 
-      messagesDiv.style.display = "block";
-      onValue(ref(db, "messages"), (snapshot) => {
-        const data = snapshot.val();
-        messagesDiv.innerHTML = "";
-        if (!data) {
-          messagesDiv.innerHTML = "<p style='color:#999;'>No messages yet.</p>";
-          return;
+// Step 2: Submit Message
+document.getElementById("submitMsgBtn").addEventListener("click", async () => {
+  const msg = document.getElementById("messageInput").value.trim();
+  if(!msg) return alert("Please enter a message!");
+  
+  await push(ref(db, "messages"), {
+    name: userName,
+    message: msg,
+    timestamp: new Date().toISOString()
+  });
+
+  document.getElementById("messageInput").value = "";
+  document.getElementById("messageSection").classList.remove("active");
+  document.getElementById("thankYouSection").classList.add("active");
+});
+
+// Admin View
+document.getElementById("adminBtn").addEventListener("click", async () => {
+  const code = prompt("Enter admin passcode:");
+  if(code !== ADMIN_PASSCODE) return alert("Incorrect passcode!");
+  
+  const messagesRef = ref(db, "messages");
+  const snapshot = await get(messagesRef);
+  const messages = snapshot.exists() ? snapshot.val() : {};
+  
+  const messagesSection = document.getElementById("messagesSection");
+  messagesSection.innerHTML = "";
+  
+  // Sort messages by timestamp descending
+  Object.entries(messages).sort((a,b)=> new Date(b[1].timestamp)-new Date(a[1].timestamp))
+    .forEach(([key,msg])=>{
+      const div = document.createElement("div");
+      div.className = "message-item";
+      
+      const details = document.createElement("div");
+      details.className = "message-details";
+      details.innerHTML = `
+        <div class="message-name">${msg.name}</div>
+        <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
+        <div class="message-text">${msg.message}</div>
+      `;
+      
+      const delBtn = document.createElement("button");
+      delBtn.className = "delete-btn";
+      delBtn.textContent = "Delete";
+      delBtn.onclick = async () => {
+        if(confirm("Delete this message?")) {
+          await remove(child(ref(db, "messages"), key));
+          div.remove();
         }
-
-        const sorted = Object.entries(data).sort(
-          (a, b) => new Date(b[1].timestamp) - new Date(a[1].timestamp)
-        );
-
-        sorted.forEach(([id, msg]) => {
-          const div = document.createElement("div");
-          div.className = "msg";
-          div.innerHTML = `
-            <div class="msg-header">
-              <strong>${msg.name}</strong>
-              <small>${new Date(msg.timestamp).toLocaleString()}</small>
-            </div>
-            <p>${msg.message}</p>
-            <button class="delete-btn" data-id="${id}">Delete</button>
-          `;
-          messagesDiv.appendChild(div);
-        });
-
-        document.querySelectorAll(".delete-btn").forEach((btn) => {
-          btn.addEventListener("click", (e) => {
-            const id = e.target.getAttribute("data-id");
-            if (confirm("Delete this message?")) remove(ref(db, `messages/${id}`));
-          });
-        });
-      });
+      };
+      
+      div.appendChild(details);
+      div.appendChild(delBtn);
+      messagesSection.appendChild(div);
     });
-  </script>
+  
+  messagesSection.scrollTop = messagesSection.scrollHeight;
+});
+</script>
 </body>
 </html>
