@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Message Board for harveen</title>
+<title>Message Board</title>
 <style>
 :root {
   --bg: #1c1c1e;
@@ -105,103 +105,99 @@ button:hover { opacity:0.85; }
 </div>
 
 <script type="module">
-document.addEventListener("DOMContentLoaded", () => {
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getDatabase, ref, push, get, remove, child } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getDatabase, ref, push, get, remove, child } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+// Your Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDFNxj9dXHwC3gZ__pxlPzVObaq3pYXsHU",
+  authDomain: "message-board-11427.firebaseapp.com",
+  databaseURL: "https://message-board-11427-default-rtdb.firebaseio.com/",
+  projectId: "message-board-11427",
+  storageBucket: "message-board-11427.appspot.com",
+  messagingSenderId: "1025990128029",
+  appId: "1:1025990128029:web:8fac79b3115d113b283f74"
+};
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDFNxj9dXHwC3gZ__pxlPzVObaq3pYXsHU",
-    authDomain: "message-board-11427.firebaseapp.com",
-    databaseURL: "https://message-board-11427-default-rtdb.firebaseio.com/",
-    projectId: "message-board-11427",
-    storageBucket: "message-board-11427.appspot.com",
-    messagingSenderId: "1025990128029",
-    appId: "1:1025990128029:web:8fac79b3115d113b283f74"
-  };
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+let userName = "";
+const ADMIN_PASSCODE = "8080";
 
-  let userName = "";
-  const ADMIN_PASSCODE = "8080";
+// Step 1: Enter Name
+document.getElementById("enterNameBtn").addEventListener("click", () => {
+  const name = document.getElementById("userNameInput").value.trim();
+  if(!name) return alert("Please enter your name!");
+  userName = name;
+  document.getElementById("nameSection").classList.remove("active");
+  document.getElementById("messageSection").classList.add("active");
+});
 
-  // Step 1: Enter Name
-  document.getElementById("enterNameBtn").addEventListener("click", () => {
-    const name = document.getElementById("userNameInput").value.trim();
-    if(!name) return alert("Please enter your name!");
-    userName = name;
-    document.getElementById("nameSection").classList.remove("active");
-    document.getElementById("messageSection").classList.add("active");
-  });
+// Step 2: Submit Message
+document.getElementById("submitMsgBtn").addEventListener("click", async () => {
+  const msg = document.getElementById("messageInput").value.trim();
+  if(!msg) return alert("Please enter a message!");
 
-  // Step 2: Submit Message
-  document.getElementById("submitMsgBtn").addEventListener("click", async () => {
-    const msg = document.getElementById("messageInput").value.trim();
-    if(!msg) return alert("Please enter a message!");
-    
-    try {
-      await push(ref(db, "messages"), {
-        name: userName,
-        message: msg,
-        timestamp: new Date().toISOString()
+  try {
+    await push(ref(db, "messages"), {
+      name: userName,
+      message: msg,
+      timestamp: new Date().toISOString()
+    });
+  } catch(e) {
+    return alert("Failed to send message. Check Firebase rules or network.");
+  }
+
+  document.getElementById("messageSection").classList.remove("active");
+  document.getElementById("thankYouSection").classList.add("active");
+});
+
+// Admin View
+document.getElementById("adminBtn").addEventListener("click", async () => {
+  const code = prompt("Enter admin passcode:");
+  if(!code || code.trim() !== ADMIN_PASSCODE) return alert("Incorrect passcode!");
+
+  const messagesRef = ref(db, "messages");
+
+  try {
+    const snapshot = await get(messagesRef);
+    const messages = snapshot.exists() ? snapshot.val() : {};
+
+    const messagesSection = document.getElementById("messagesSection");
+    messagesSection.innerHTML = "";
+
+    Object.entries(messages)
+      .sort((a,b)=> new Date(b[1].timestamp)-new Date(a[1].timestamp))
+      .forEach(([key,msg])=>{
+        const div = document.createElement("div");
+        div.className = "message-item";
+
+        const details = document.createElement("div");
+        details.className = "message-details";
+        details.innerHTML = `
+          <div class="message-name">${msg.name}</div>
+          <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
+          <div class="message-text">${msg.message}</div>
+        `;
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "delete-btn";
+        delBtn.textContent = "Delete";
+        delBtn.onclick = async () => {
+          if(confirm("Delete this message?")) {
+            await remove(child(ref(db, "messages"), key));
+            div.remove();
+          }
+        };
+
+        div.appendChild(details);
+        div.appendChild(delBtn);
+        messagesSection.appendChild(div);
       });
-
-      document.getElementById("messageSection").classList.remove("active");
-      document.getElementById("thankYouSection").classList.add("active");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to send message. Please check your network.");
-    }
-  });
-
-  // Admin View
-  document.getElementById("adminBtn").addEventListener("click", async () => {
-    try {
-      const code = prompt("Enter admin passcode:");
-      if(code !== ADMIN_PASSCODE) return alert("Incorrect passcode!");
-      
-      const messagesRef = ref(db, "messages");
-      const snapshot = await get(messagesRef);
-      const messages = snapshot.exists() ? snapshot.val() : {};
-      
-      const messagesSection = document.getElementById("messagesSection");
-      messagesSection.innerHTML = "";
-
-      // Sort messages by timestamp descending
-      Object.entries(messages).sort((a,b)=> new Date(b[1].timestamp)-new Date(a[1].timestamp))
-        .forEach(([key,msg])=>{
-          const div = document.createElement("div");
-          div.className = "message-item";
-          
-          const details = document.createElement("div");
-          details.className = "message-details";
-          details.innerHTML = `
-            <div class="message-name">${msg.name}</div>
-            <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
-            <div class="message-text">${msg.message}</div>
-          `;
-          
-          const delBtn = document.createElement("button");
-          delBtn.className = "delete-btn";
-          delBtn.textContent = "Delete";
-          delBtn.onclick = async () => {
-            if(confirm("Delete this message?")) {
-              await remove(child(ref(db, "messages"), key));
-              div.remove();
-            }
-          };
-          
-          div.appendChild(details);
-          div.appendChild(delBtn);
-          messagesSection.appendChild(div);
-        });
-    } catch(err) {
-      console.error(err);
-      alert("Failed to load admin messages. Check your network or database rules.");
-    }
-  });
-
+  } catch(e) {
+    alert("Failed to fetch messages. Check Firebase rules or network.");
+  }
 });
 </script>
 </body>
