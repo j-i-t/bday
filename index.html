@@ -10,7 +10,6 @@
   --card: #2c2c2e;
   --border: #3a3a3c;
   --accent: #f2f2f2;
-  --muted: #a0a0a0;
 }
 body {
   background: var(--bg);
@@ -24,7 +23,6 @@ body {
 .container { max-width: 800px; width: 100%; }
 .section { display: none; }
 .section.active { display: block; }
-
 input, textarea, button {
   width:100%; padding:12px; border-radius:8px; border:1px solid var(--border);
   font-size:1rem; margin-bottom:15px; background:#2c2c2e; color:var(--accent);
@@ -32,10 +30,10 @@ input, textarea, button {
 input:focus, textarea:focus { outline:none; border-color:var(--accent); }
 textarea { min-height:80px; resize:vertical; }
 button { cursor:pointer; border:none; font-weight:600; }
-#enterNameBtn, #submitMsgBtn, #nextPhotoBtn, #finalSubmitBtn, #backToPhotoBtn, #skipBtn, #adminBtn { 
-  background: var(--accent); color: var(--bg); margin-top:5px; 
-}
 button:hover { opacity:0.85; }
+#enterNameBtn,#submitMsgBtn,#nextPhotoBtn,#skipBtn,#finalSubmitBtn,#backToPhotoBtn,#adminBtn,#adminBtnPreview,#adminBtnThank {
+  background: var(--accent); color: var(--bg); margin-top:5px;
+}
 
 /* Image Upload Buttons */
 .photo-btn {
@@ -93,9 +91,7 @@ button:hover { opacity:0.85; }
   border-bottom: 1px solid var(--border);
   cursor: pointer;
 }
-.name-item:hover {
-  background: rgba(255,255,255,0.1);
-}
+.name-item:hover { background: rgba(255,255,255,0.1); }
 .main-gallery {
   flex: 1;
   background: var(--card);
@@ -123,20 +119,14 @@ button:hover { opacity:0.85; }
   margin-bottom: 8px;
 }
 .delete-btn {
-  background:#f44336;
-  color:white;
-  border:none;
-  border-radius:6px;
-  padding:5px 10px;
-  cursor:pointer;
-  margin-top:5px;
+  background:#f44336; color:white; border:none; border-radius:6px;
+  padding:5px 10px; cursor:pointer; margin-top:5px;
 }
 .delete-btn:hover { background:#d32f2f; }
 </style>
 </head>
 <body>
 <div class="container">
-  <!-- Admin Button -->
   <button id="adminBtn">Admin View</button>
 
   <!-- Step 1 -->
@@ -187,8 +177,11 @@ button:hover { opacity:0.85; }
   </div>
 </div>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
 <script>
-// Firebase CDN version (no module)
 const firebaseConfig = {
   apiKey: "AIzaSyDFNxj9dXHwC3gZ__pxlPzVObaq3pYXsHU",
   authDomain: "message-board-11427.firebaseapp.com",
@@ -201,32 +194,29 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let userName = "";
-let userMessage = "";
-let userPhotos = [null,null,null];
-let currentPreview = 0;
-const ADMIN_PASSCODE = "8080";
+let userName="", userMessage="", userPhotos=[null,null,null], currentPreview=0;
+const ADMIN_PASSCODE="8080";
 
 // Step 1
 document.getElementById("enterNameBtn").onclick = ()=>{
-  const name = document.getElementById("userNameInput").value.trim();
+  const name=document.getElementById("userNameInput").value.trim();
   if(!name){alert("Enter name"); return;}
   userName=name;
-  document.getElementById("nameSection").classList.remove("active");
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
   document.getElementById("messageSection").classList.add("active");
 };
 
 // Step 2
 document.getElementById("submitMsgBtn").onclick = ()=>{
-  const msg = document.getElementById("messageInput").value.trim();
+  const msg=document.getElementById("messageInput").value.trim();
   if(!msg){alert("Enter message"); return;}
   userMessage=msg;
   setupPhotoButtons();
-  document.getElementById("messageSection").classList.remove("active");
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
   document.getElementById("photoSection").classList.add("active");
 };
 
-// Step 3: Photo Buttons
+// Step 3: Photo buttons
 function setupPhotoButtons(){
   const container = document.getElementById("photoButtons");
   container.innerHTML="";
@@ -235,23 +225,20 @@ function setupPhotoButtons(){
     btn.className="photo-btn";
     btn.innerHTML=`<span>+ Add Image ${i+1}</span><input type="file" accept="image/*" data-index="${i}">`;
     container.appendChild(btn);
-  }
-  document.querySelectorAll(".photo-btn input").forEach(input=>{
+    const input = btn.querySelector("input");
     input.onchange = e=>{
-      const file = e.target.files[0];
-      const index = e.target.dataset.index;
+      const file=e.target.files[0], index=e.target.dataset.index;
       if(file){
         const reader = new FileReader();
         reader.onload = ()=>{
           userPhotos[index]=reader.result;
-          const label = e.target.parentElement;
-          label.innerHTML=`<img src="${reader.result}" alt="Photo ${index+1}"><input type="file" accept="image/*" data-index="${index}">`;
-          label.querySelector("input").onchange = input.onchange;
+          btn.innerHTML=`<img src="${reader.result}" alt="Photo ${parseInt(index)+1}"><input type="file" accept="image/*" data-index="${index}">`;
+          btn.querySelector("input").onchange = input.onchange;
         };
         reader.readAsDataURL(file);
       }
     };
-  });
+  }
 }
 
 // Step 3 → 4
@@ -264,36 +251,27 @@ document.getElementById("nextPhotoBtn").onclick = document.getElementById("skipB
 // Preview
 function showPreview(){
   const gallery = document.getElementById("previewGallery");
-  gallery.innerHTML="";
-  const images = userPhotos.filter(p=>p);
   gallery.innerHTML=`<h2 class="preview-name">From: ${userName}</h2>`;
+  const images = userPhotos.filter(p=>p);
   if(images.length){
-    const img = document.createElement("img");
-    img.src = images[currentPreview];
-    img.className="preview-img";
+    const img=document.createElement("img"); img.src=images[currentPreview]; img.className="preview-img";
     gallery.appendChild(img);
-    const msgDiv = document.createElement("div");
-    msgDiv.className="message-text-preview";
-    msgDiv.textContent = userMessage;
+    const msgDiv=document.createElement("div"); msgDiv.className="message-text-preview"; msgDiv.textContent=userMessage;
     gallery.appendChild(msgDiv);
     if(images.length>1){
-      const left = document.createElement("button");
-      left.innerHTML="&#10094;"; left.className="arrow arrow-left";
+      const left=document.createElement("button"); left.innerHTML="&#10094;"; left.className="arrow arrow-left";
       left.onclick=()=>{currentPreview=(currentPreview-1+images.length)%images.length; showPreview();};
-      const right = document.createElement("button");
-      right.innerHTML="&#10095;"; right.className="arrow arrow-right";
+      const right=document.createElement("button"); right.innerHTML="&#10095;"; right.className="arrow arrow-right";
       right.onclick=()=>{currentPreview=(currentPreview+1)%images.length; showPreview();};
       gallery.appendChild(left); gallery.appendChild(right);
     }
   } else {
-    const msgDiv = document.createElement("div");
-    msgDiv.className="message-text-preview";
-    msgDiv.textContent=userMessage;
+    const msgDiv=document.createElement("div"); msgDiv.className="message-text-preview"; msgDiv.textContent=userMessage;
     gallery.appendChild(msgDiv);
   }
 }
 
-// Back button
+// Back
 document.getElementById("backToPhotoBtn").onclick = ()=>{
   document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
   document.getElementById("photoSection").classList.add("active");
@@ -314,47 +292,35 @@ document.getElementById("finalSubmitBtn").onclick = ()=>{
 // Admin buttons
 ["adminBtn","adminBtnPreview","adminBtnThank"].forEach(id=>{
   document.getElementById(id).onclick = async ()=>{
-    const code = prompt("Enter admin passcode:");
+    const code=prompt("Enter admin passcode:");
     if(code!==ADMIN_PASSCODE){alert("Incorrect"); return;}
     document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
     document.getElementById("adminSection").classList.add("active");
     const snapshot = await db.ref("messages").once("value");
     const messages = snapshot.val()||{};
-    const nameList=document.getElementById("nameList");
-    const adminGallery=document.getElementById("adminGallery");
-    nameList.innerHTML="";
-    adminGallery.innerHTML="<p>Select a name to view their message</p>";
+    const nameList=document.getElementById("nameList"), adminGallery=document.getElementById("adminGallery");
+    nameList.innerHTML=""; adminGallery.innerHTML="<p>Select a name to view their message</p>";
     Object.entries(messages).forEach(([key,msg])=>{
-      const item = document.createElement("div");
-      item.className="name-item"; item.textContent=msg.name;
+      const item=document.createElement("div"); item.className="name-item"; item.textContent=msg.name;
       item.onclick=()=>{
-        adminGallery.innerHTML="";
-        const box = document.createElement("div"); box.className="preview-box";
+        adminGallery.innerHTML=""; const box=document.createElement("div"); box.className="preview-box";
         box.innerHTML=`<div class="preview-name">From: ${msg.name}</div>`;
-        if(msg.photos) msg.photos.forEach(p=>{
-          const img = document.createElement("img"); img.src=p;
-          box.appendChild(img);
-        });
-        const text = document.createElement("div"); text.className="message-text-preview"; text.textContent=msg.message;
+        if(msg.photos) msg.photos.forEach(p=>{ const img=document.createElement("img"); img.src=p; box.appendChild(img); });
+        const text=document.createElement("div"); text.className="message-text-preview"; text.textContent=msg.message;
         box.appendChild(text);
-        const del = document.createElement("button"); del.className="delete-btn"; del.textContent="Delete";
+        const del=document.createElement("button"); del.className="delete-btn"; del.textContent="Delete";
         del.onclick=async ()=>{
           if(confirm("Delete this message?")){
             await db.ref("messages/"+key).remove();
             item.remove(); adminGallery.innerHTML="<p>Deleted.</p>";
           }
         };
-        box.appendChild(del);
-        adminGallery.appendChild(box);
+        box.appendChild(del); adminGallery.appendChild(box);
       };
       nameList.appendChild(item);
     });
   };
 });
 </script>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 </body>
 </html>
