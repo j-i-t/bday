@@ -21,10 +21,7 @@ body {
   padding: 40px 20px;
   min-height: 100vh;
 }
-.container {
-  max-width: 800px;
-  width: 100%;
-}
+.container { max-width: 800px; width: 100%; }
 .section { display: none; }
 .section.active { display: block; }
 
@@ -35,12 +32,10 @@ input, textarea, button {
 input:focus, textarea:focus { outline:none; border-color:var(--accent); }
 textarea { min-height:80px; resize:vertical; }
 button { cursor:pointer; border:none; font-weight:600; }
-#enterNameBtn, #submitMsgBtn, #nextPhotoBtn, #finalSubmitBtn, #backToPhotoBtn, #adminBtnPreview {
-  background: var(--accent); color: var(--bg);
+#enterNameBtn, #submitMsgBtn, #nextPhotoBtn, #finalSubmitBtn, #backToPhotoBtn, #skipBtn, #adminBtn { 
+  background: var(--accent); color: var(--bg); margin-top:5px; 
 }
-#enterNameBtn:hover, #submitMsgBtn:hover, #nextPhotoBtn:hover, #finalSubmitBtn:hover, #backToPhotoBtn:hover, #adminBtnPreview:hover {
-  opacity:0.85;
-}
+button:hover { opacity:0.85; }
 
 /* Image Upload Buttons */
 .photo-btn {
@@ -70,8 +65,6 @@ button { cursor:pointer; border:none; font-weight:600; }
   background:#29292c; color:white; padding:10px; border-radius:6px; margin-top:10px;
   text-align:center;
 }
-.gallery-container { display:flex; flex-direction:column; gap:20px; }
-
 .arrow {
   position: absolute; top:50%; transform:translateY(-50%);
   font-size:2rem; color:white;
@@ -143,8 +136,10 @@ button { cursor:pointer; border:none; font-weight:600; }
 </head>
 <body>
 <div class="container">
+  <!-- Admin Button -->
   <button id="adminBtn">Admin View</button>
 
+  <!-- Step 1 -->
   <div id="nameSection" class="section active">
     <h1>Welcome!</h1>
     <p>Enter your name to continue:</p>
@@ -152,12 +147,14 @@ button { cursor:pointer; border:none; font-weight:600; }
     <button id="enterNameBtn">Next</button>
   </div>
 
+  <!-- Step 2 -->
   <div id="messageSection" class="section">
     <h1>Leave a Message</h1>
     <textarea id="messageInput" placeholder="Your message..."></textarea>
     <button id="submitMsgBtn">Next</button>
   </div>
 
+  <!-- Step 3 -->
   <div id="photoSection" class="section">
     <h1>Add Photos (max 3)</h1>
     <div id="photoButtons"></div>
@@ -165,19 +162,23 @@ button { cursor:pointer; border:none; font-weight:600; }
     <button id="skipBtn">Skip</button>
   </div>
 
+  <!-- Step 4 -->
   <div id="previewSection" class="section">
     <h1>Preview</h1>
     <div id="previewGallery" style="position:relative;"></div>
     <button id="finalSubmitBtn">Submit</button>
     <button id="backToPhotoBtn">Back</button>
-    <button id="adminBtnPreview">Admin</button>
+    <button id="adminBtnPreview">Admin View</button>
   </div>
 
+  <!-- Step 5 -->
   <div id="thankYouSection" class="section">
     <h1>Thanks for your message! 🎉</h1>
     <p>Your message has been submitted successfully.</p>
+    <button id="adminBtnThank">Admin View</button>
   </div>
 
+  <!-- Admin -->
   <div id="adminSection" class="section">
     <div class="messages-layout">
       <div class="name-list" id="nameList"></div>
@@ -186,185 +187,174 @@ button { cursor:pointer; border:none; font-weight:600; }
   </div>
 </div>
 
-<!-- Firebase Scripts -->
-<script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js"></script>
-
 <script>
-document.addEventListener("DOMContentLoaded", ()=> {
-  const dbConfig = {
-    apiKey: "AIzaSyDFNxj9dXHwC3gZ__pxlPzVObaq3pYXsHU",
-    authDomain: "message-board-11427.firebaseapp.com",
-    databaseURL: "https://message-board-11427-default-rtdb.firebaseio.com/",
-    projectId: "message-board-11427",
-    storageBucket: "message-board-11427.appspot.com",
-    messagingSenderId: "1025990128029",
-    appId: "1:1025990128029:web:8fac79b3115d113b283f74"
-  };
-  const app = firebase.initializeApp(dbConfig);
-  const db = firebase.database();
+// Firebase CDN version (no module)
+const firebaseConfig = {
+  apiKey: "AIzaSyDFNxj9dXHwC3gZ__pxlPzVObaq3pYXsHU",
+  authDomain: "message-board-11427.firebaseapp.com",
+  databaseURL: "https://message-board-11427-default-rtdb.firebaseio.com/",
+  projectId: "message-board-11427",
+  storageBucket: "message-board-11427.appspot.com",
+  messagingSenderId: "1025990128029",
+  appId: "1:1025990128029:web:8fac79b3115d113b283f74"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-  let userName="", userMessage="", userPhotos=[null,null,null], currentPreview=0;
-  const ADMIN_PASSCODE="8080";
+let userName = "";
+let userMessage = "";
+let userPhotos = [null,null,null];
+let currentPreview = 0;
+const ADMIN_PASSCODE = "8080";
 
-  const nameSection = document.getElementById("nameSection");
-  const messageSection = document.getElementById("messageSection");
-  const photoSection = document.getElementById("photoSection");
-  const previewSection = document.getElementById("previewSection");
-  const thankYouSection = document.getElementById("thankYouSection");
-  const adminSection = document.getElementById("adminSection");
+// Step 1
+document.getElementById("enterNameBtn").onclick = ()=>{
+  const name = document.getElementById("userNameInput").value.trim();
+  if(!name){alert("Enter name"); return;}
+  userName=name;
+  document.getElementById("nameSection").classList.remove("active");
+  document.getElementById("messageSection").classList.add("active");
+};
 
-  const userNameInput=document.getElementById("userNameInput");
-  const messageInput=document.getElementById("messageInput");
+// Step 2
+document.getElementById("submitMsgBtn").onclick = ()=>{
+  const msg = document.getElementById("messageInput").value.trim();
+  if(!msg){alert("Enter message"); return;}
+  userMessage=msg;
+  setupPhotoButtons();
+  document.getElementById("messageSection").classList.remove("active");
+  document.getElementById("photoSection").classList.add("active");
+};
 
-  function showSection(section){
-    document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-    section.classList.add("active");
+// Step 3: Photo Buttons
+function setupPhotoButtons(){
+  const container = document.getElementById("photoButtons");
+  container.innerHTML="";
+  for(let i=0;i<3;i++){
+    const btn = document.createElement("label");
+    btn.className="photo-btn";
+    btn.innerHTML=`<span>+ Add Image ${i+1}</span><input type="file" accept="image/*" data-index="${i}">`;
+    container.appendChild(btn);
   }
-
-  document.getElementById("enterNameBtn").addEventListener("click", ()=>{
-    const name = userNameInput.value.trim();
-    if(!name) return alert("Enter name");
-    userName = name;
-    showSection(messageSection);
-  });
-
-  document.getElementById("submitMsgBtn").addEventListener("click", ()=>{
-    const msg = messageInput.value.trim();
-    if(!msg) return alert("Enter message");
-    userMessage = msg;
-    setupPhotoButtons();
-    showSection(photoSection);
-  });
-
-  function setupPhotoButtons(){
-    const container=document.getElementById("photoButtons");
-    container.innerHTML="";
-    for(let i=0;i<3;i++){
-      const btn=document.createElement("label");
-      btn.className="photo-btn";
-      btn.innerHTML=`<span>+ Add Image ${i+1}</span><input type="file" accept="image/*" data-index="${i}">`;
-      container.appendChild(btn);
-    }
-    document.querySelectorAll(".photo-btn input").forEach(input=>{
-      input.addEventListener("change", e=>{
-        const file = e.target.files[0];
-        const index = e.target.dataset.index;
-        if(file){
-          const reader=new FileReader();
-          reader.onload = ()=>{
-            userPhotos[index]=reader.result;
-            const label=e.target.parentElement;
-            label.innerHTML=`<img src="${reader.result}" alt="Photo ${parseInt(index)+1}"><input type="file" accept="image/*" data-index="${index}">`;
-          };
-          reader.readAsDataURL(file);
-        }
-      });
-    });
-  }
-
-  function showPreview(){
-    const gallery=document.getElementById("previewGallery");
-    gallery.innerHTML="";
-    const images = userPhotos.filter(p=>p);
-    currentPreview = currentPreview || 0;
-    gallery.innerHTML=`<h2 class="preview-name">From: ${userName}</h2>`;
-    if(images.length>0){
-      const img=document.createElement("img");
-      img.src=images[currentPreview];
-      img.className="preview-img";
-      gallery.appendChild(img);
-      const msgDiv=document.createElement("div");
-      msgDiv.className="message-text-preview";
-      msgDiv.textContent=userMessage;
-      gallery.appendChild(msgDiv);
-
-      if(images.length>1){
-        const left=document.createElement("button");
-        left.innerHTML="&#10094;";
-        left.className="arrow arrow-left";
-        left.onclick=()=>{currentPreview=(currentPreview-1+images.length)%images.length; showPreview();};
-        const right=document.createElement("button");
-        right.innerHTML="&#10095;";
-        right.className="arrow arrow-right";
-        right.onclick=()=>{currentPreview=(currentPreview+1)%images.length; showPreview();};
-        gallery.appendChild(left); gallery.appendChild(right);
-      }
-    } else {
-      const msgDiv=document.createElement("div");
-      msgDiv.className="message-text-preview";
-      msgDiv.textContent=userMessage;
-      gallery.appendChild(msgDiv);
-    }
-  }
-
-  document.getElementById("nextPhotoBtn").addEventListener("click", ()=>{
-    showPreview(); showSection(previewSection);
-  });
-  document.getElementById("skipBtn").addEventListener("click", ()=>{
-    showPreview(); showSection(previewSection);
-  });
-  document.getElementById("backToPhotoBtn").addEventListener("click", ()=>{
-    showSection(photoSection);
-  });
-
-  document.getElementById("finalSubmitBtn").addEventListener("click", async ()=>{
-    await db.ref("messages").push({
-      name:userName,
-      message:userMessage,
-      photos:userPhotos.filter(p=>p),
-      timestamp:new Date().toISOString()
-    });
-    showSection(thankYouSection);
-  });
-
-  function openAdmin(){
-    const code = prompt("Enter admin passcode:");
-    if(code!==ADMIN_PASSCODE) return alert("Incorrect");
-    showSection(adminSection);
-
-    db.ref("messages").get().then(snapshot=>{
-      const messages = snapshot.exists()?snapshot.val():{};
-      const nameList=document.getElementById("nameList");
-      const adminGallery=document.getElementById("adminGallery");
-      nameList.innerHTML="";
-      adminGallery.innerHTML="<p>Select a name to view their message</p>";
-
-      Object.entries(messages).forEach(([key,msg])=>{
-        const item=document.createElement("div");
-        item.className="name-item"; item.textContent=msg.name;
-        item.onclick=()=>{
-          adminGallery.innerHTML="";
-          const box=document.createElement("div"); box.className="preview-box";
-          box.innerHTML=`<div class="preview-name">From: ${msg.name}</div>`;
-          if(msg.photos) msg.photos.forEach(p=>{
-            const img=document.createElement("img"); img.src=p;
-            box.appendChild(img);
-          });
-          const messageText=document.createElement("div");
-          messageText.className="message-text-preview";
-          messageText.textContent=msg.message;
-          box.appendChild(messageText);
-          const delBtn=document.createElement("button");
-          delBtn.className="delete-btn"; delBtn.textContent="Delete";
-          delBtn.onclick=async ()=>{
-            if(confirm("Delete this message?")){
-              await db.ref("messages").child(key).remove();
-              item.remove(); adminGallery.innerHTML="<p>Deleted.</p>";
-            }
-          };
-          box.appendChild(delBtn);
-          adminGallery.appendChild(box);
+  document.querySelectorAll(".photo-btn input").forEach(input=>{
+    input.onchange = e=>{
+      const file = e.target.files[0];
+      const index = e.target.dataset.index;
+      if(file){
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          userPhotos[index]=reader.result;
+          const label = e.target.parentElement;
+          label.innerHTML=`<img src="${reader.result}" alt="Photo ${index+1}"><input type="file" accept="image/*" data-index="${index}">`;
+          label.querySelector("input").onchange = input.onchange;
         };
-        nameList.appendChild(item);
-      });
-    });
+        reader.readAsDataURL(file);
+      }
+    };
+  });
+}
+
+// Step 3 → 4
+document.getElementById("nextPhotoBtn").onclick = document.getElementById("skipBtn").onclick = ()=>{
+  showPreview();
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById("previewSection").classList.add("active");
+};
+
+// Preview
+function showPreview(){
+  const gallery = document.getElementById("previewGallery");
+  gallery.innerHTML="";
+  const images = userPhotos.filter(p=>p);
+  gallery.innerHTML=`<h2 class="preview-name">From: ${userName}</h2>`;
+  if(images.length){
+    const img = document.createElement("img");
+    img.src = images[currentPreview];
+    img.className="preview-img";
+    gallery.appendChild(img);
+    const msgDiv = document.createElement("div");
+    msgDiv.className="message-text-preview";
+    msgDiv.textContent = userMessage;
+    gallery.appendChild(msgDiv);
+    if(images.length>1){
+      const left = document.createElement("button");
+      left.innerHTML="&#10094;"; left.className="arrow arrow-left";
+      left.onclick=()=>{currentPreview=(currentPreview-1+images.length)%images.length; showPreview();};
+      const right = document.createElement("button");
+      right.innerHTML="&#10095;"; right.className="arrow arrow-right";
+      right.onclick=()=>{currentPreview=(currentPreview+1)%images.length; showPreview();};
+      gallery.appendChild(left); gallery.appendChild(right);
+    }
+  } else {
+    const msgDiv = document.createElement("div");
+    msgDiv.className="message-text-preview";
+    msgDiv.textContent=userMessage;
+    gallery.appendChild(msgDiv);
   }
+}
 
-  document.getElementById("adminBtn").addEventListener("click", openAdmin);
-  document.getElementById("adminBtnPreview").addEventListener("click", openAdmin);
+// Back button
+document.getElementById("backToPhotoBtn").onclick = ()=>{
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById("photoSection").classList.add("active");
+};
 
+// Submit
+document.getElementById("finalSubmitBtn").onclick = ()=>{
+  db.ref("messages").push({
+    name:userName,
+    message:userMessage,
+    photos:userPhotos.filter(p=>p),
+    timestamp:new Date().toISOString()
+  });
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById("thankYouSection").classList.add("active");
+};
+
+// Admin buttons
+["adminBtn","adminBtnPreview","adminBtnThank"].forEach(id=>{
+  document.getElementById(id).onclick = async ()=>{
+    const code = prompt("Enter admin passcode:");
+    if(code!==ADMIN_PASSCODE){alert("Incorrect"); return;}
+    document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+    document.getElementById("adminSection").classList.add("active");
+    const snapshot = await db.ref("messages").once("value");
+    const messages = snapshot.val()||{};
+    const nameList=document.getElementById("nameList");
+    const adminGallery=document.getElementById("adminGallery");
+    nameList.innerHTML="";
+    adminGallery.innerHTML="<p>Select a name to view their message</p>";
+    Object.entries(messages).forEach(([key,msg])=>{
+      const item = document.createElement("div");
+      item.className="name-item"; item.textContent=msg.name;
+      item.onclick=()=>{
+        adminGallery.innerHTML="";
+        const box = document.createElement("div"); box.className="preview-box";
+        box.innerHTML=`<div class="preview-name">From: ${msg.name}</div>`;
+        if(msg.photos) msg.photos.forEach(p=>{
+          const img = document.createElement("img"); img.src=p;
+          box.appendChild(img);
+        });
+        const text = document.createElement("div"); text.className="message-text-preview"; text.textContent=msg.message;
+        box.appendChild(text);
+        const del = document.createElement("button"); del.className="delete-btn"; del.textContent="Delete";
+        del.onclick=async ()=>{
+          if(confirm("Delete this message?")){
+            await db.ref("messages/"+key).remove();
+            item.remove(); adminGallery.innerHTML="<p>Deleted.</p>";
+          }
+        };
+        box.appendChild(del);
+        adminGallery.appendChild(box);
+      };
+      nameList.appendChild(item);
+    });
+  };
 });
 </script>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 </body>
 </html>
