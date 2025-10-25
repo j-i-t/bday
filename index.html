@@ -61,7 +61,6 @@
       background-color: #2ea043;
     }
 
-    /* --- FIX: Distinct corners for admin and menu --- */
     .admin-btn {
       position: fixed;
       top: 15px;
@@ -77,31 +76,31 @@
       font-size: 22px;
       color: white;
       border: none;
-      z-index: 20;
+      z-index: 15;
     }
 
     .menu-btn {
       position: fixed;
       top: 15px;
-      right: 15px;
+      left: 15px;
       background-color: #30363d;
       border-radius: 50%;
       width: 45px;
       height: 45px;
-      display: flex;
+      display: none; /* Hidden until on admin page */
       justify-content: center;
       align-items: center;
       cursor: pointer;
       font-size: 22px;
       color: white;
       border: none;
-      z-index: 19;
+      z-index: 15;
     }
 
     .menu {
       position: absolute;
       top: 70px;
-      right: 15px;
+      left: 15px;
       background: #161b22;
       border: 1px solid #30363d;
       border-radius: 8px;
@@ -110,7 +109,8 @@
       padding: 10px;
       max-height: 300px;
       overflow-y: auto;
-      z-index: 9;
+      z-index: 14;
+      width: 200px;
     }
 
     .menu button {
@@ -135,6 +135,7 @@
       max-width: 100%;
       border-radius: 8px;
       margin-top: 10px;
+      object-fit: contain;
     }
 
     .arrow {
@@ -164,15 +165,17 @@
       }
       h1 { font-size: 1.4em; }
       button { width: 100%; }
-      .admin-btn { width: 40px; height: 40px; font-size: 20px; }
-      .menu-btn { width: 40px; height: 40px; font-size: 20px; }
     }
   </style>
 </head>
 <body>
-  <!-- Admin button top-left -->
-  <button class="admin-btn" onclick="showAdmin()">⚙️</button>
+  <!-- Admin Button (Hidden on admin page) -->
+  <button class="admin-btn" id="adminBtn" onclick="showAdmin()">⚙️</button>
 
+  <!-- Menu Button (Only on admin page) -->
+  <button class="menu-btn" id="menuBtn" onclick="toggleMenu()">☰</button>
+
+  <!-- Pages -->
   <div class="container" id="name-page">
     <h1>🎉 Birthday Message</h1>
     <p>Enter your name:</p>
@@ -203,21 +206,32 @@
   </div>
 
   <div class="container hidden" id="admin-page">
-    <!-- Menu button now top-right -->
-    <button class="menu-btn" onclick="toggleMenu()">☰</button>
     <div class="menu" id="menu"></div>
     <h1>Admin View</h1>
     <p id="admin-content">Nothing here yet.</p>
-    <button onclick="goBackToName()">Back</button>
+    <button style="margin-top: 40px;" onclick="goBackToName()">Back</button>
   </div>
 
   <script>
+    let currentPage = "name";
     let userData = { name: "", message: "", images: [] };
     let currentImageIndex = 0;
 
     function showPage(pageId) {
       document.querySelectorAll(".container").forEach(c => c.classList.add("hidden"));
       document.getElementById(pageId).classList.remove("hidden");
+
+      // Handle admin/menu button visibility
+      const adminBtn = document.getElementById("adminBtn");
+      const menuBtn = document.getElementById("menuBtn");
+      if (pageId === "admin-page") {
+        adminBtn.style.display = "none";
+        menuBtn.style.display = "flex";
+      } else {
+        adminBtn.style.display = "flex";
+        menuBtn.style.display = "none";
+        document.getElementById("menu").style.display = "none";
+      }
     }
 
     function goToMessage() {
@@ -291,11 +305,11 @@
       menu.style.display = menu.style.display === "flex" ? "none" : "flex";
     }
 
+    // Press Enter = click Next
     document.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
-        const visible = document.querySelector(".container:not(.hidden)");
-        const nextBtn = visible.querySelector("button");
-        if (nextBtn) nextBtn.click();
+        const current = document.querySelector(".container:not(.hidden) button");
+        if (current) current.click();
       }
     });
   </script>
