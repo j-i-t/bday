@@ -175,6 +175,7 @@ button { cursor:pointer; border:none; font-weight:600; }
     <div id="previewGallery" style="position:relative;"></div>
     <button id="finalSubmitBtn">Submit</button>
     <button id="backToPhotoBtn">Back</button>
+    <button id="adminBtnPreview" style="margin-top:15px;">Admin View</button>
   </div>
 
   <!-- Step 5 -->
@@ -253,7 +254,7 @@ function setupPhotoButtons(){
         reader.onload = ()=>{
           userPhotos[index] = reader.result;
           const label = e.target.parentElement;
-          label.innerHTML = `<img src="${reader.result}" alt="Photo ${index+1}"><input type="file" accept="image/*" data-index="${index}">`;
+          label.innerHTML = `<img src="${reader.result}" alt="Photo ${index+1}"><input type="file" accept="image/*" data-index="${index}"><span>✔</span>`;
         };
         reader.readAsDataURL(file);
       }
@@ -277,20 +278,13 @@ function showPreview(){
   const gallery = document.getElementById("previewGallery");
   gallery.innerHTML = "";
   const images = userPhotos.filter(p=>p);
-  if(images.length === 0){
-    const msgDiv = document.createElement("div");
-    msgDiv.className = "message-text-preview";
-    msgDiv.textContent = userMessage;
-    gallery.innerHTML = `<h2 class="preview-name">From: ${userName}</h2>`;
-    gallery.appendChild(msgDiv);
-    return;
-  }
-
-  const img = document.createElement("img");
-  img.src = images[currentPreview];
-  img.className = "preview-img";
   gallery.innerHTML = `<h2 class="preview-name">From: ${userName}</h2>`;
-  gallery.appendChild(img);
+  if(images.length > 0){
+    const img = document.createElement("img");
+    img.src = images[currentPreview];
+    img.className = "preview-img";
+    gallery.appendChild(img);
+  }
   const msgDiv = document.createElement("div");
   msgDiv.className = "message-text-preview";
   msgDiv.textContent = userMessage;
@@ -328,7 +322,7 @@ document.getElementById("finalSubmitBtn").addEventListener("click", async ()=>{
 });
 
 // Admin
-document.getElementById("adminBtn").addEventListener("click", async ()=>{
+async function openAdmin(){
   const code = prompt("Enter admin passcode:");
   if(code!==ADMIN_PASSCODE) return alert("Incorrect");
   document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
@@ -349,7 +343,12 @@ document.getElementById("adminBtn").addEventListener("click", async ()=>{
       adminGallery.innerHTML = "";
       const box = document.createElement("div");
       box.className = "preview-box";
-      box.innerHTML = `<div class="preview-name">From: ${msg.name}</div>`;
+
+      const nameDiv = document.createElement("div");
+      nameDiv.className = "preview-name";
+      nameDiv.textContent = `From: ${msg.name}`;
+      box.appendChild(nameDiv);
+
       if(msg.photos){
         msg.photos.forEach(p=>{
           const img = document.createElement("img");
@@ -357,11 +356,13 @@ document.getElementById("adminBtn").addEventListener("click", async ()=>{
           box.appendChild(img);
         });
       }
+
       const messageText = document.createElement("div");
       messageText.className = "message-text-preview";
       messageText.textContent = msg.message;
       box.appendChild(messageText);
-      const delBtn = document.crea teElement("button");
+
+      const delBtn = document.createElement("button");
       delBtn.className = "delete-btn";
       delBtn.textContent = "Delete";
       delBtn.onclick = async ()=>{
@@ -376,7 +377,10 @@ document.getElementById("adminBtn").addEventListener("click", async ()=>{
     };
     nameList.appendChild(item);
   });
-});
+}
+
+document.getElementById("adminBtn").addEventListener("click", openAdmin);
+document.getElementById("adminBtnPreview").addEventListener("click", openAdmin);
 </script>
 </body>
 </html>
