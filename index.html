@@ -1,178 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Message Board</title>
-  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Message Board</title>
+<style>
+:root {
+  --bg: #1c1c1e;
+  --card: #2c2c2e;
+  --border: #3a3a3c;
+  --accent: #6b7aff;
+  --text: #f2f2f2;
+  --muted: #a0a0a0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 40px 20px;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.container {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+h1 { text-align:center; margin-bottom:15px; font-weight:600; }
+p { text-align:center; color:var(--muted); margin-bottom:20px; }
+
+input, textarea, button {
+  width:100%; padding:12px; border-radius:8px; border:1px solid var(--border); font-size:1rem; color:var(--text); background:#1f1f21; margin-bottom:15px;
+}
+input:focus, textarea:focus { border-color: var(--accent); outline:none; }
+textarea { resize:vertical; min-height:80px; }
+button { background: var(--accent); border:none; font-weight:600; cursor:pointer; color:white; transition:opacity 0.2s; }
+button:hover { opacity:0.85; }
+
+.section { display:none; }
+.section.active { display:block; }
+
+#adminBtn { margin-bottom: 20px; }
+
+.messages-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 20px;
+  border-radius: 10px;
+  max-height: 500px;
+  overflow-y: auto;
+  margin-top: 20px;
+}
+
+.message-item {
+  border-left: 4px solid var(--accent);
+  padding: 10px;
+  margin-bottom:10px;
+  background:#29292c;
+  border-radius:6px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+}
+
+.message-details { flex:1; }
+.message-name { font-weight:600; color: var(--accent); }
+.message-time { font-size:0.8rem; color:var(--muted); }
+.message-text { margin-top:5px; white-space:pre-wrap; }
+.message-img { max-width:100%; margin-top:10px; border-radius:6px; display:block; margin-bottom:5px; }
+.delete-btn { background:#f44336; color:white; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; margin-left:10px; }
+.delete-btn:hover { background:#d32f2f; }
+#photoPreviewContainer img { max-width: 30%; margin-right:5px; margin-bottom:5px; border-radius:6px; display:inline-block; }
+#goBackBtn { background:#444; margin-top:10px; }
+</style>
 </head>
-<body class="bg-gray-100 flex h-screen">
+<body>
+<div class="container">
 
-  <!-- Sidebar -->
-  <aside class="w-1/4 bg-white shadow-md overflow-y-auto p-4">
-    <h2 class="text-xl font-bold mb-3">Messages</h2>
-    <ul id="userList" class="space-y-2"></ul>
-    <button id="adminBtn" class="mt-5 w-full bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded">Admin View</button>
-  </aside>
+  <button id="adminBtn">Admin View</button>
 
-  <!-- Main Content -->
-  <main class="flex-1 p-6 overflow-y-auto">
-    <div id="inputSection">
-      <h1 class="text-2xl font-bold mb-4">Welcome to the Message Board</h1>
+  <!-- Step 1: Name -->
+  <div id="nameSection" class="section active">
+    <h1>Welcome!</h1>
+    <p>Enter your name to continue:</p>
+    <input type="text" id="userNameInput" placeholder="Your name" />
+    <button id="enterNameBtn">Next</button>
+  </div>
 
-      <div id="nameSection" class="space-y-3">
-        <label class="block font-semibold">Enter your name:</label>
-        <input type="text" id="nameInput" class="border rounded px-3 py-2 w-1/2" placeholder="Your name..." />
-        <button id="nextBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Next</button>
-      </div>
+  <!-- Step 2: Message + Photos -->
+  <div id="messageSection" class="section">
+    <h1>Leave a Message</h1>
+    <textarea id="messageInput" placeholder="Your message..."></textarea>
+    <input type="file" id="photoInput" accept="image/*" multiple />
+    <div id="photoPreviewContainer"></div>
+    <button id="submitMsgBtn">Send Message</button>
+  </div>
 
-      <div id="messageSection" class="hidden space-y-3">
-        <label class="block font-semibold">Enter your message:</label>
-        <textarea id="messageInput" class="border rounded px-3 py-2 w-full h-24" placeholder="Your message..."></textarea>
+  <!-- Step 3: Thank You -->
+  <div id="thankYouSection" class="section">
+    <h1>Thanks for your message! 🎉</h1>
+    <p>Your message has been submitted successfully.</p>
+  </div>
 
-        <label class="block font-semibold mt-2">Upload a photo:</label>
-        <input type="file" id="photoInput" accept="image/*" class="border rounded px-2 py-1" />
-        <img id="photoPreview" class="mt-2 hidden w-48 h-48 object-cover rounded shadow" />
+  <!-- Admin Messages -->
+  <div id="messagesSection" class="messages-section">
+    <button id="goBackBtn">Go Back</button>
+  </div>
+</div>
 
-        <button id="submitBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Submit</button>
-      </div>
-    </div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getDatabase, ref, push, get, remove, child } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getStorage, ref as sref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
 
-    <div id="displaySection" class="hidden">
-      <h2 class="text-xl font-bold mb-2">Message Details</h2>
-      <p id="messageText" class="text-lg"></p>
-      <img id="messagePhoto" class="mt-4 max-w-sm rounded-lg shadow hidden" />
-      <button id="deleteBtn" class="mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded hidden">Delete</button>
-    </div>
+const firebaseConfig = {
+  apiKey: "AIzaSyDFNxj9dXHwC3gZ__pxlPzVObaq3pYXsHU",
+  authDomain: "message-board-11427.firebaseapp.com",
+  databaseURL: "https://message-board-11427-default-rtdb.firebaseio.com/",
+  projectId: "message-board-11427",
+  storageBucket: "message-board-11427.appspot.com",
+  messagingSenderId: "1025990128029",
+  appId: "1:1025990128029:web:8fac79b3115d113b283f74"
+};
 
-    <button id="exportBtn" class="mt-8 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded hidden">Export All</button>
-  </main>
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const storage = getStorage(app);
 
-  <script>
-    // Firebase setup
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "message-board-11427.firebaseapp.com",
-      databaseURL: "https://message-board-11427-default-rtdb.firebaseio.com/",
-      projectId: "message-board-11427",
-      storageBucket: "message-board-11427.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+let userName = "";
+const ADMIN_PASSCODE = "8080";
+
+// Step 1: Enter Name
+document.getElementById("enterNameBtn").addEventListener("click", () => {
+  const name = document.getElementById("userNameInput").value.trim();
+  if(!name) return alert("Please enter your name!");
+  userName = name;
+  document.getElementById("nameSection").classList.remove("active");
+  document.getElementById("messageSection").classList.add("active");
+});
+
+// Preview photos
+const photoInput = document.getElementById("photoInput");
+const photoPreviewContainer = document.getElementById("photoPreviewContainer");
+let selectedFiles = [];
+
+photoInput.addEventListener("change", () => {
+  selectedFiles = Array.from(photoInput.files);
+  if(selectedFiles.length > 3){
+    alert("You can upload up to 3 photos!");
+    photoInput.value = "";
+    selectedFiles = [];
+    photoPreviewContainer.innerHTML = "";
+    return;
+  }
+  photoPreviewContainer.innerHTML = "";
+  selectedFiles.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement("img");
+      img.src = e.target.result;
+      photoPreviewContainer.appendChild(img);
     };
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const storage = firebase.storage();
+    reader.readAsDataURL(file);
+  });
+});
 
-    const userList = document.getElementById("userList");
-    const nameInput = document.getElementById("nameInput");
-    const nextBtn = document.getElementById("nextBtn");
-    const messageSection = document.getElementById("messageSection");
-    const nameSection = document.getElementById("nameSection");
-    const messageInput = document.getElementById("messageInput");
-    const photoInput = document.getElementById("photoInput");
-    const photoPreview = document.getElementById("photoPreview");
-    const submitBtn = document.getElementById("submitBtn");
-    const messageText = document.getElementById("messageText");
-    const messagePhoto = document.getElementById("messagePhoto");
-    const deleteBtn = document.getElementById("deleteBtn");
-    const adminBtn = document.getElementById("adminBtn");
-    const exportBtn = document.getElementById("exportBtn");
+// Step 2: Submit Message + Photos
+document.getElementById("submitMsgBtn").addEventListener("click", async () => {
+  const msg = document.getElementById("messageInput").value.trim();
+  if(!msg && selectedFiles.length === 0) return alert("Please enter a message or select photos!");
 
-    let currentName = "";
-    let isAdmin = false;
+  const photoURLs = [];
+  for(let file of selectedFiles){
+    const storageRef = sref(storage, 'photos/' + Date.now() + '_' + file.name);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+    photoURLs.push(url);
+  }
 
-    nextBtn.onclick = () => {
-      if (!nameInput.value.trim()) return alert("Enter your name first!");
-      currentName = nameInput.value.trim();
-      nameSection.classList.add("hidden");
-      messageSection.classList.remove("hidden");
-    };
+  await push(ref(db, "messages"), {
+    name: userName,
+    message: msg,
+    photos: photoURLs,
+    timestamp: new Date().toISOString()
+  });
 
-    photoInput.onchange = e => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = evt => {
-          photoPreview.src = evt.target.result;
-          photoPreview.classList.remove("hidden");
-        };
-        reader.readAsDataURL(file);
-      }
-    };
+  document.getElementById("messageSection").classList.remove("active");
+  document.getElementById("thankYouSection").classList.add("active");
 
-    submitBtn.onclick = async () => {
-      const message = messageInput.value.trim();
-      const file = photoInput.files[0];
-      if (!message) return alert("Enter a message!");
+  document.getElementById("messageInput").value = "";
+  photoInput.value = "";
+  photoPreviewContainer.innerHTML = "";
+  selectedFiles = [];
+});
 
-      let photoURL = "";
-      if (file) {
-        const storageRef = storage.ref("photos/" + Date.now() + "_" + file.name);
-        await storageRef.put(file);
-        photoURL = await storageRef.getDownloadURL();
-      }
+// Admin View
+document.getElementById("adminBtn").addEventListener("click", async () => {
+  const code = prompt("Enter admin passcode:");
+  if(code !== ADMIN_PASSCODE) return alert("Incorrect passcode!");
 
-      await db.ref("messages").push({ name: currentName, message, photoURL });
-      alert("Thanks for your message!");
-      location.reload();
-    };
+  const messagesSection = document.getElementById("messagesSection");
+  messagesSection.innerHTML = "";
 
-    function renderMessages(snapshot) {
-      userList.innerHTML = "";
-      snapshot.forEach(child => {
-        const data = child.val();
-        const li = document.createElement("li");
-        li.textContent = data.name;
-        li.className = "cursor-pointer hover:bg-gray-200 px-3 py-1 rounded";
-        li.onclick = () => {
-          messageText.textContent = data.message;
-          if (data.photoURL) {
-            messagePhoto.src = data.photoURL;
-            messagePhoto.classList.remove("hidden");
-          } else {
-            messagePhoto.classList.add("hidden");
+  const messagesRef = ref(db, "messages");
+  const snapshot = await get(messagesRef);
+  const messages = snapshot.exists() ? snapshot.val() : {};
+
+  if(Object.keys(messages).length === 0){
+    const noMsg = document.createElement("div");
+    noMsg.style.textAlign = "center";
+    noMsg.style.color = "#999";
+    noMsg.style.padding = "20px";
+    noMsg.textContent = "Nothing here yet!";
+    messagesSection.appendChild(noMsg);
+  } else {
+    Object.entries(messages)
+      .sort((a,b)=> new Date(b[1].timestamp)-new Date(a[1].timestamp))
+      .forEach(([key,msg])=>{
+        const div = document.createElement("div");
+        div.className = "message-item";
+
+        const details = document.createElement("div");
+        details.className = "message-details";
+        details.innerHTML = `
+          <div class="message-name">${msg.name}</div>
+          <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
+          <div class="message-text">${msg.message || ""}</div>
+        `;
+
+        if(msg.photos && msg.photos.length){
+          msg.photos.forEach(url=>{
+            const img = document.createElement("img");
+            img.src = url;
+            img.className = "message-img";
+            details.appendChild(img);
+          });
+        }
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "delete-btn";
+        delBtn.textContent = "Delete";
+        delBtn.onclick = async () => {
+          if(confirm("Delete this message?")){
+            await remove(child(ref(db,"messages"), key));
+            div.remove();
           }
-          deleteBtn.dataset.key = child.key;
-          deleteBtn.classList.toggle("hidden", !isAdmin);
         };
-        userList.appendChild(li);
+
+        div.appendChild(details);
+        div.appendChild(delBtn);
+        messagesSection.appendChild(div);
       });
-    }
+  }
 
-    db.ref("messages").on("value", renderMessages);
+  messagesSection.classList.add("active");
+});
 
-    adminBtn.onclick = () => {
-      const key = prompt("Enter admin key:");
-      if (key === "1234") { // change this key
-        isAdmin = true;
-        alert("Admin access granted");
-        exportBtn.classList.remove("hidden");
-      } else {
-        alert("Wrong key!");
-      }
-    };
-
-    deleteBtn.onclick = async () => {
-      const key = deleteBtn.dataset.key;
-      if (confirm("Delete this message?")) {
-        await db.ref("messages/" + key).remove();
-        alert("Deleted!");
-        location.reload();
-      }
-    };
-
-    exportBtn.onclick = async () => {
-      const snapshot = await db.ref("messages").get();
-      const data = snapshot.val();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "messages.json";
-      a.click();
-    };
-  </script>
+// Go back from admin view
+document.getElementById("goBackBtn").addEventListener("click", ()=>{
+  document.getElementById("messagesSection").classList.remove("active");
+});
+</script>
 </body>
 </html>
