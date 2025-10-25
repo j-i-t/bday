@@ -222,4 +222,149 @@ document.addEventListener("DOMContentLoaded", ()=> {
     section.classList.add("active");
   }
 
-  document.getElementById("enterNameBtn").
+  document.getElementById("enterNameBtn").addEventListener("click", ()=>{
+    const name = userNameInput.value.trim();
+    if(!name) return alert("Enter name");
+    userName = name;
+    showSection(messageSection);
+  });
+
+  document.getElementById("submitMsgBtn").addEventListener("click", ()=>{
+    const msg = messageInput.value.trim();
+    if(!msg) return alert("Enter message");
+    userMessage = msg;
+    setupPhotoButtons();
+    showSection(photoSection);
+  });
+
+  function setupPhotoButtons(){
+    const container=document.getElementById("photoButtons");
+    container.innerHTML="";
+    for(let i=0;i<3;i++){
+      const btn=document.createElement("label");
+      btn.className="photo-btn";
+      btn.innerHTML=`<span>+ Add Image ${i+1}</span><input type="file" accept="image/*" data-index="${i}">`;
+      container.appendChild(btn);
+    }
+    document.querySelectorAll(".photo-btn input").forEach(input=>{
+      input.addEventListener("change", e=>{
+        const file = e.target.files[0];
+        const index = e.target.dataset.index;
+        if(file){
+          const reader=new FileReader();
+          reader.onload = ()=>{
+            userPhotos[index]=reader.result;
+            const label=e.target.parentElement;
+            label.innerHTML=`<img src="${reader.result}" alt="Photo ${parseInt(index)+1}"><input type="file" accept="image/*" data-index="${index}">`;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    });
+  }
+
+  function showPreview(){
+    const gallery=document.getElementById("previewGallery");
+    gallery.innerHTML="";
+    const images = userPhotos.filter(p=>p);
+    currentPreview = currentPreview || 0;
+    gallery.innerHTML=`<h2 class="preview-name">From: ${userName}</h2>`;
+    if(images.length>0){
+      const img=document.createElement("img");
+      img.src=images[currentPreview];
+      img.className="preview-img";
+      gallery.appendChild(img);
+      const msgDiv=document.createElement("div");
+      msgDiv.className="message-text-preview";
+      msgDiv.textContent=userMessage;
+      gallery.appendChild(msgDiv);
+
+      if(images.length>1){
+        const left=document.createElement("button");
+        left.innerHTML="&#10094;";
+        left.className="arrow arrow-left";
+        left.onclick=()=>{currentPreview=(currentPreview-1+images.length)%images.length; showPreview();};
+        const right=document.createElement("button");
+        right.innerHTML="&#10095;";
+        right.className="arrow arrow-right";
+        right.onclick=()=>{currentPreview=(currentPreview+1)%images.length; showPreview();};
+        gallery.appendChild(left); gallery.appendChild(right);
+      }
+    } else {
+      const msgDiv=document.createElement("div");
+      msgDiv.className="message-text-preview";
+      msgDiv.textContent=userMessage;
+      gallery.appendChild(msgDiv);
+    }
+  }
+
+  document.getElementById("nextPhotoBtn").addEventListener("click", ()=>{
+    showPreview(); showSection(previewSection);
+  });
+  document.getElementById("skipBtn").addEventListener("click", ()=>{
+    showPreview(); showSection(previewSection);
+  });
+  document.getElementById("backToPhotoBtn").addEventListener("click", ()=>{
+    showSection(photoSection);
+  });
+
+  document.getElementById("finalSubmitBtn").addEventListener("click", async ()=>{
+    await db.ref("messages").push({
+      name:userName,
+      message:userMessage,
+      photos:userPhotos.filter(p=>p),
+      timestamp:new Date().toISOString()
+    });
+    showSection(thankYouSection);
+  });
+
+  function openAdmin(){
+    const code = prompt("Enter admin passcode:");
+    if(code!==ADMIN_PASSCODE) return alert("Incorrect");
+    showSection(adminSection);
+
+    db.ref("messages").get().then(snapshot=>{
+      const messages = snapshot.exists()?snapshot.val():{};
+      const nameList=document.getElementById("nameList");
+      const adminGallery=document.getElementById("adminGallery");
+      nameList.innerHTML="";
+      adminGallery.innerHTML="<p>Select a name to view their message</p>";
+
+      Object.entries(messages).forEach(([key,msg])=>{
+        const item=document.createElement("div");
+        item.className="name-item"; item.textContent=msg.name;
+        item.onclick=()=>{
+          adminGallery.innerHTML="";
+          const box=document.createElement("div"); box.className="preview-box";
+          box.innerHTML=`<div class="preview-name">From: ${msg.name}</div>`;
+          if(msg.photos) msg.photos.forEach(p=>{
+            const img=document.createElement("img"); img.src=p;
+            box.appendChild(img);
+          });
+          const messageText=document.createElement("div");
+          messageText.className="message-text-preview";
+          messageText.textContent=msg.message;
+          box.appendChild(messageText);
+          const delBtn=document.createElement("button");
+          delBtn.className="delete-btn"; delBtn.textContent="Delete";
+          delBtn.onclick=async ()=>{
+            if(confirm("Delete this message?")){
+              await db.ref("messages").child(key).remove();
+              item.remove(); adminGallery.innerHTML="<p>Deleted.</p>";
+            }
+          };
+          box.appendChild(delBtn);
+          adminGallery.appendChild(box);
+        };
+        nameList.appendChild(item);
+      });
+    });
+  }
+
+  document.getElementById("adminBtn").addEventListener("click", openAdmin);
+  document.getElementById("adminBtnPreview").addEventListener("click", openAdmin);
+
+});
+</script>
+</body>
+</html>
