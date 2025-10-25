@@ -61,6 +61,7 @@
       background-color: #2ea043;
     }
 
+    /* --- FIX: Distinct corners for admin and menu --- */
     .admin-btn {
       position: fixed;
       top: 15px;
@@ -76,6 +77,7 @@
       font-size: 22px;
       color: white;
       border: none;
+      z-index: 20;
     }
 
     .menu-btn {
@@ -93,7 +95,7 @@
       font-size: 22px;
       color: white;
       border: none;
-      z-index: 10;
+      z-index: 19;
     }
 
     .menu {
@@ -162,10 +164,13 @@
       }
       h1 { font-size: 1.4em; }
       button { width: 100%; }
+      .admin-btn { width: 40px; height: 40px; font-size: 20px; }
+      .menu-btn { width: 40px; height: 40px; font-size: 20px; }
     }
   </style>
 </head>
 <body>
+  <!-- Admin button top-left -->
   <button class="admin-btn" onclick="showAdmin()">⚙️</button>
 
   <div class="container" id="name-page">
@@ -198,6 +203,7 @@
   </div>
 
   <div class="container hidden" id="admin-page">
+    <!-- Menu button now top-right -->
     <button class="menu-btn" onclick="toggleMenu()">☰</button>
     <div class="menu" id="menu"></div>
     <h1>Admin View</h1>
@@ -206,7 +212,6 @@
   </div>
 
   <script>
-    let currentPage = "name";
     let userData = { name: "", message: "", images: [] };
     let currentImageIndex = 0;
 
@@ -286,11 +291,11 @@
       menu.style.display = menu.style.display === "flex" ? "none" : "flex";
     }
 
-    // Press Enter = click Next
     document.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
-        const current = document.querySelector(".container:not(.hidden) button");
-        if (current) current.click();
+        const visible = document.querySelector(".container:not(.hidden)");
+        const nextBtn = visible.querySelector("button");
+        if (nextBtn) nextBtn.click();
       }
     });
   </script>
