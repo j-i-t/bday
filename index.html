@@ -3,125 +3,118 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Message Board</title>
+<title>Birthday Message Board</title>
 <style>
 :root {
-  --bg: #1c1c1e;
-  --card: #2c2c2e;
-  --border: #3a3a3c;
+  --bg: #f5f5f5;
+  --card: #fff;
   --accent: #6b7aff;
-  --text: #f2f2f2;
-  --muted: #a0a0a0;
+  --text: #333;
+  --muted: #555;
+  --btn-bg: #6b7aff;
+  --btn-hover: #5661d2;
 }
-
 body {
   background: var(--bg);
-  color: var(--text);
+  font-family: Arial, sans-serif;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
   padding: 40px 20px;
-  font-family: "Inter", system-ui, sans-serif;
+  min-height: 100vh;
+  color: var(--text);
 }
-
 .container {
   background: var(--card);
-  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 30px;
-  max-width: 600px;
+  max-width: 700px;
   width: 100%;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  text-align:center;
 }
-
-h1 { text-align:center; margin-bottom:15px; font-weight:600; }
-p { text-align:center; color:var(--muted); margin-bottom:20px; }
-
-input, textarea, button {
-  width:100%; padding:12px; border-radius:8px; border:1px solid var(--border); font-size:1rem; color:var(--text); background:#1f1f21; margin-bottom:15px;
-}
-input:focus, textarea:focus { border-color: var(--accent); outline:none; }
+h1 { margin-bottom:15px; }
+p { color:var(--muted); margin-bottom:20px; }
+input, textarea, button { width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; margin-bottom:15px; font-size:1rem; }
+input:focus, textarea:focus { outline:none; border-color:var(--accent); }
 textarea { resize:vertical; min-height:80px; }
-button { background: var(--accent); border:none; font-weight:600; cursor:pointer; color:white; transition:opacity 0.2s; }
-button:hover { opacity:0.85; }
-
+button { background: var(--btn-bg); color:white; border:none; cursor:pointer; transition:0.2s; }
+button:hover { background: var(--btn-hover); }
 .section { display:none; }
 .section.active { display:block; }
-
-#adminBtn { margin-bottom: 20px; }
-
-.messages-section {
-  background: var(--card);
-  border: 1px solid var(--border);
-  padding: 20px;
-  border-radius: 10px;
-  max-height: 500px;
-  overflow-y: auto;
-  margin-top: 20px;
-}
-
-.message-item {
-  border-left: 4px solid var(--accent);
-  padding: 10px;
-  margin-bottom:10px;
-  background:#29292c;
-  border-radius:6px;
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-}
-
-.message-details { flex:1; }
-.message-name { font-weight:600; color: var(--accent); }
-.message-time { font-size:0.8rem; color:var(--muted); }
-.message-text { margin-top:5px; white-space:pre-wrap; }
-.message-img { max-width:100%; margin-top:10px; border-radius:6px; display:block; margin-bottom:5px; }
-.delete-btn { background:#f44336; color:white; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; margin-left:10px; }
+.photo-preview img { max-width:100px; max-height:100px; margin:5px; border-radius:6px; border:1px solid #ccc; }
+.slideshow-container { position:relative; margin-top:15px; }
+.slide { display:none; border:1px solid #ccc; border-radius:8px; padding:10px; background:#f0f0f0; }
+.slide img { max-width:100%; border-radius:6px; }
+.nav-btn { background:var(--btn-bg); color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; margin:5px; }
+.nav-btn:hover { background:var(--btn-hover); }
+.message-preview { background:#eaeaea; padding:10px; border-radius:6px; margin-top:10px; white-space:pre-wrap; text-align:left; }
+.admin-section { margin-top:20px; text-align:left; }
+.admin-message { border-bottom:1px solid #ccc; padding:10px 0; }
+.delete-btn { background:#f44336; color:white; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; }
 .delete-btn:hover { background:#d32f2f; }
-#photoPreviewContainer img { max-width: 30%; margin-right:5px; margin-bottom:5px; border-radius:6px; display:inline-block; }
-#goBackBtn { background:#444; margin-top:10px; }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <button id="adminBtn">Admin View</button>
-
   <!-- Step 1: Name -->
   <div id="nameSection" class="section active">
-    <h1>Welcome!</h1>
+    <h1>Birthday Message 🎉</h1>
     <p>Enter your name to continue:</p>
     <input type="text" id="userNameInput" placeholder="Your name" />
     <button id="enterNameBtn">Next</button>
   </div>
 
-  <!-- Step 2: Message + Photos -->
+  <!-- Step 2: Message -->
   <div id="messageSection" class="section">
-    <h1>Leave a Message</h1>
+    <h1>Write Your Message</h1>
     <textarea id="messageInput" placeholder="Your message..."></textarea>
-    <input type="file" id="photoInput" accept="image/*" multiple />
-    <div id="photoPreviewContainer"></div>
-    <button id="submitMsgBtn">Send Message</button>
+    <button id="nextToPhotoBtn">Next</button>
+    <button id="backToNameBtn">Back</button>
   </div>
 
-  <!-- Step 3: Thank You -->
+  <!-- Step 3: Photo Upload -->
+  <div id="photoSection" class="section">
+    <h1>Add Photos (optional, max 3)</h1>
+    <label style="cursor:pointer; background: var(--btn-bg); color:white; padding:10px; border-radius:8px; display:inline-block;">
+      Select Photos
+      <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
+    </label>
+    <div class="photo-preview" id="photoPreview"></div>
+    <button id="nextToPreviewBtn">Preview</button>
+    <button id="backToMessageBtn">Back</button>
+  </div>
+
+  <!-- Step 4: Preview -->
+  <div id="previewSection" class="section">
+    <h1>Preview Your Message</h1>
+    <div id="previewName"></div>
+    <div class="message-preview" id="previewMessage"></div>
+    <div class="slideshow-container" id="previewSlideshow"></div>
+    <button id="submitBtn">Submit</button>
+    <button id="backToPhotoBtn">Back</button>
+  </div>
+
+  <!-- Step 5: Thank You -->
   <div id="thankYouSection" class="section">
-    <h1>Thanks for your message! 🎉</h1>
-    <p>Your message has been submitted successfully.</p>
+    <h1>Thanks! 🎉</h1>
+    <p>Your birthday message has been sent.</p>
   </div>
 
-  <!-- Admin Messages -->
-  <div id="messagesSection" class="messages-section">
-    <button id="goBackBtn">Go Back</button>
+  <!-- Admin Section -->
+  <div id="adminSection" class="section admin-section">
+    <h1>Admin View</h1>
+    <button id="backToStartAdminBtn">Back to Start</button>
+    <div id="adminMessages"></div>
   </div>
+
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getDatabase, ref, push, get, remove, child } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
-import { getStorage, ref as sref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
 
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDFNxj9dXHwC3gZ__pxlPzVObaq3pYXsHU",
   authDomain: "message-board-11427.firebaseapp.com",
@@ -134,141 +127,131 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const storage = getStorage(app);
 
 let userName = "";
+let messageText = "";
+let photoFiles = [];
+let currentSlide = 0;
 const ADMIN_PASSCODE = "8080";
 
-// Step 1: Enter Name
-document.getElementById("enterNameBtn").addEventListener("click", () => {
-  const name = document.getElementById("userNameInput").value.trim();
-  if(!name) return alert("Please enter your name!");
-  userName = name;
-  document.getElementById("nameSection").classList.remove("active");
-  document.getElementById("messageSection").classList.add("active");
+// --- Step Navigation ---
+function showSection(sectionId){
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.getElementById(sectionId).classList.add("active");
+}
+
+// Step1
+document.getElementById("enterNameBtn").addEventListener("click", ()=>{
+  const val = document.getElementById("userNameInput").value.trim();
+  if(!val) return alert("Please enter your name");
+  userName = val;
+  showSection("messageSection");
 });
 
-// Preview photos
-const photoInput = document.getElementById("photoInput");
-const photoPreviewContainer = document.getElementById("photoPreviewContainer");
-let selectedFiles = [];
+// Step2
+document.getElementById("nextToPhotoBtn").addEventListener("click", ()=>{
+  const val = document.getElementById("messageInput").value.trim();
+  if(!val) return alert("Please enter a message");
+  messageText = val;
+  showSection("photoSection");
+});
+document.getElementById("backToNameBtn").addEventListener("click", ()=>showSection("nameSection"));
 
-photoInput.addEventListener("change", () => {
-  selectedFiles = Array.from(photoInput.files);
-  if(selectedFiles.length > 3){
-    alert("You can upload up to 3 photos!");
-    photoInput.value = "";
-    selectedFiles = [];
-    photoPreviewContainer.innerHTML = "";
-    return;
-  }
-  photoPreviewContainer.innerHTML = "";
-  selectedFiles.forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = document.createElement("img");
-      img.src = e.target.result;
-      photoPreviewContainer.appendChild(img);
-    };
-    reader.readAsDataURL(file);
+// Step3
+const photoInput = document.getElementById("photoInput");
+const photoPreview = document.getElementById("photoPreview");
+
+photoInput.addEventListener("change", ()=>{
+  photoFiles = Array.from(photoInput.files).slice(0,3);
+  photoPreview.innerHTML = "";
+  photoFiles.forEach(f=>{
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(f);
+    photoPreview.appendChild(img);
   });
 });
 
-// Step 2: Submit Message + Photos
-document.getElementById("submitMsgBtn").addEventListener("click", async () => {
-  const msg = document.getElementById("messageInput").value.trim();
-  if(!msg && selectedFiles.length === 0) return alert("Please enter a message or select photos!");
+document.getElementById("nextToPreviewBtn").addEventListener("click", ()=>{
+  // Fill preview
+  document.getElementById("previewName").textContent = `From ${userName}`;
+  document.getElementById("previewMessage").textContent = messageText;
 
-  const photoURLs = [];
-  for(let file of selectedFiles){
-    const storageRef = sref(storage, 'photos/' + Date.now() + '_' + file.name);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-    photoURLs.push(url);
+  const slideshow = document.getElementById("previewSlideshow");
+  slideshow.innerHTML = "";
+  if(photoFiles.length === 0){
+    slideshow.textContent = "No photos added";
+  } else {
+    photoFiles.forEach((file,i)=>{
+      const div = document.createElement("div");
+      div.className="slide";
+      if(i===0) div.style.display="block";
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(file);
+      div.appendChild(img);
+      slideshow.appendChild(div);
+    });
+    if(photoFiles.length>1){
+      const prev = document.createElement("button");
+      prev.textContent="<";
+      prev.className="nav-btn";
+      prev.onclick=()=>showSlide(-1);
+      const next = document.createElement("button");
+      next.textContent=">";
+      next.className="nav-btn";
+      next.onclick=()=>showSlide(1);
+      slideshow.appendChild(prev);
+      slideshow.appendChild(next);
+    }
+    currentSlide = 0;
   }
 
-  await push(ref(db, "messages"), {
+  showSection("previewSection");
+});
+
+document.getElementById("backToMessageBtn").addEventListener("click", ()=>showSection("messageSection"));
+document.getElementById("backToPhotoBtn").addEventListener("click", ()=>showSection("photoSection"));
+
+// Slideshow navigation
+function showSlide(direction){
+  const slides = document.querySelectorAll("#previewSlideshow .slide");
+  slides[currentSlide].style.display="none";
+  currentSlide=(currentSlide+direction+slides.length)%slides.length;
+  slides[currentSlide].style.display="block";
+}
+
+// Step4: Submit
+document.getElementById("submitBtn").addEventListener("click", async ()=>{
+  const readerPromises = photoFiles.map(f=>new Promise(res=>{
+    const fr = new FileReader();
+    fr.onload = ()=>res(fr.result);
+    fr.readAsDataURL(f);
+  }));
+  const photoData = await Promise.all(readerPromises);
+
+  await push(ref(db,"messages"),{
     name: userName,
-    message: msg,
-    photos: photoURLs,
+    message: messageText,
+    photos: photoData,
     timestamp: new Date().toISOString()
   });
 
-  document.getElementById("messageSection").classList.remove("active");
-  document.getElementById("thankYouSection").classList.add("active");
-
-  document.getElementById("messageInput").value = "";
-  photoInput.value = "";
-  photoPreviewContainer.innerHTML = "";
-  selectedFiles = [];
+  showSection("thankYouSection");
 });
 
-// Admin View
-document.getElementById("adminBtn").addEventListener("click", async () => {
+// Admin
+function loadAdmin(){
   const code = prompt("Enter admin passcode:");
-  if(code !== ADMIN_PASSCODE) return alert("Incorrect passcode!");
-
-  const messagesSection = document.getElementById("messagesSection");
-  messagesSection.innerHTML = "";
-
-  const messagesRef = ref(db, "messages");
-  const snapshot = await get(messagesRef);
-  const messages = snapshot.exists() ? snapshot.val() : {};
-
-  if(Object.keys(messages).length === 0){
-    const noMsg = document.createElement("div");
-    noMsg.style.textAlign = "center";
-    noMsg.style.color = "#999";
-    noMsg.style.padding = "20px";
-    noMsg.textContent = "Nothing here yet!";
-    messagesSection.appendChild(noMsg);
-  } else {
-    Object.entries(messages)
-      .sort((a,b)=> new Date(b[1].timestamp)-new Date(a[1].timestamp))
+  if(code!==ADMIN_PASSCODE) return alert("Incorrect passcode!");
+  const adminDiv = document.getElementById("adminMessages");
+  adminDiv.innerHTML = "";
+  get(ref(db,"messages")).then(snapshot=>{
+    const msgs = snapshot.exists()? snapshot.val() : {};
+    if(Object.keys(msgs).length===0){
+      adminDiv.innerHTML="<p>Nothing here.</p>";
+    }
+    Object.entries(msgs).sort((a,b)=>new Date(b[1].timestamp)-new Date(a[1].timestamp))
       .forEach(([key,msg])=>{
         const div = document.createElement("div");
-        div.className = "message-item";
-
-        const details = document.createElement("div");
-        details.className = "message-details";
-        details.innerHTML = `
-          <div class="message-name">${msg.name}</div>
-          <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
-          <div class="message-text">${msg.message || ""}</div>
-        `;
-
-        if(msg.photos && msg.photos.length){
-          msg.photos.forEach(url=>{
-            const img = document.createElement("img");
-            img.src = url;
-            img.className = "message-img";
-            details.appendChild(img);
-          });
-        }
-
-        const delBtn = document.createElement("button");
-        delBtn.className = "delete-btn";
-        delBtn.textContent = "Delete";
-        delBtn.onclick = async () => {
-          if(confirm("Delete this message?")){
-            await remove(child(ref(db,"messages"), key));
-            div.remove();
-          }
-        };
-
-        div.appendChild(details);
-        div.appendChild(delBtn);
-        messagesSection.appendChild(div);
-      });
-  }
-
-  messagesSection.classList.add("active");
-});
-
-// Go back from admin view
-document.getElementById("goBackBtn").addEventListener("click", ()=>{
-  document.getElementById("messagesSection").classList.remove("active");
-});
-</script>
-</body>
-</html>
+        div.className="admin-message";
+        const photosHTML = msg.photos?.map(p=>`<img src="${p}" style="max-width:80px; margin:5px; border-radius:4px;">`).join("")||"";
+        div.innerHTML=`<strong>From ${
