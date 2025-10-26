@@ -10,7 +10,6 @@
   --card: #2c2c2e;
   --border: #3a3a3c;
   --accent: #f2f2f2;
-  --muted: #a0a0a0;
 }
 body {
   background: var(--bg);
@@ -32,12 +31,12 @@ input, textarea, button {
 input:focus, textarea:focus { outline:none; border-color:var(--accent); }
 textarea { min-height:80px; resize:vertical; }
 button { cursor:pointer; border:none; font-weight:600; }
+button:hover { opacity:0.85; }
 #enterNameBtn, #submitMsgBtn, #nextPhotoBtn, #finalSubmitBtn, #backToPhotoBtn, #skipBtn, #adminBtn { 
   background: var(--accent); color: var(--bg); margin-top:5px; 
 }
-button:hover { opacity:0.85; }
 
-/* Image Upload Buttons */
+/* Image Upload */
 .photo-btn {
   display:flex; justify-content:center; align-items:center;
   border: 2px dashed var(--accent);
@@ -57,6 +56,7 @@ button:hover { opacity:0.85; }
   background:rgba(0,0,0,0.3); padding:5px 15px; border-radius:8px;
 }
 
+/* Preview */
 .preview-img {
   width:100%; max-height:400px; object-fit:cover; border-radius:10px; margin-bottom:10px;
   display:block; margin:auto;
@@ -75,49 +75,21 @@ button:hover { opacity:0.85; }
 .arrow-left { left:10px; }
 .arrow-right { right:10px; }
 
-.messages-layout {
-  display: flex;
-  gap: 20px;
-  margin-top: 30px;
+/* Admin */
+.admin-gallery {
   position: relative;
-}
-.name-list {
-  width: 220px;
-  background: var(--card);
-  padding: 15px;
-  border-radius: 10px;
-  height: 80vh;
-  overflow-y: auto;
-  position: fixed;
-  left: -260px;
-  top: 80px;
-  transition: left 0.3s ease;
-  z-index: 15;
-}
-.name-list.show { left: 20px; }
-
-.name-item {
-  padding: 10px;
-  border-bottom: 1px solid var(--border);
-  cursor: pointer;
-}
-.name-item:hover {
-  background: rgba(255,255,255,0.1);
-}
-.main-gallery {
-  flex: 1;
   background: var(--card);
   border-radius: 10px;
   padding: 20px;
-  overflow-y: auto;
-  height: 80vh;
+  text-align: center;
+  overflow: hidden;
+  min-height: 60vh;
 }
 .preview-box {
   background: #2c2c2e;
   border-radius: 12px;
   padding: 20px;
   text-align: center;
-  margin-bottom: 20px;
 }
 .preview-box img {
   width: 100%;
@@ -141,34 +113,11 @@ button:hover { opacity:0.85; }
 }
 .delete-btn:hover { background:#d32f2f; }
 
-/* Hamburger menu */
-#menuToggle {
-  position: absolute;
-  top: 5px;
-  width: 50px;
-  right: 810px;
-  font-size: 1.8rem;
-  background: rgba(255,255,255,0.1);
-  border: none;
-  color: white;
-  border-radius: 8px;
-  padding: 3px 3px;
-  cursor: pointer;
-  z-index: 20;
-  transition: background 0.3s ease;
-}
-#menuToggle:hover {
-  background: rgba(255,255,255,0.2);
-}
-
-/* Responsive design */
+/* Responsive */
 @media (max-width: 768px) {
-  body { padding: 20px 10px; }
   .container { width: 100%; }
   .photo-btn { height: 150px; }
   .preview-img { max-height: 300px; }
-  #menuToggle { top: 20px; right: 15px; font-size: 1.6rem; }
-  .name-list { top: 70px; height: 75vh; }
 }
 </style>
 </head>
@@ -180,14 +129,14 @@ button:hover { opacity:0.85; }
   <!-- Step 1 -->
   <div id="nameSection" class="section active">
     <h1>Welcome!</h1>
-    <p>Enter your name to continue (please use your real name):</p>
+    <p>Enter your name to continue:</p>
     <input type="text" id="userNameInput" placeholder="Your name">
     <button id="enterNameBtn">Next</button>
   </div>
 
   <!-- Step 2 -->
   <div id="messageSection" class="section">
-    <h1>Leave a Message for Harveen!</h1>
+    <h1>Leave a Message!</h1>
     <textarea id="messageInput" placeholder="Your message..."></textarea>
     <button id="submitMsgBtn">Next</button>
   </div>
@@ -214,15 +163,14 @@ button:hover { opacity:0.85; }
     <p>Your message has been submitted successfully.</p>
   </div>
 
-  <!-- Admin -->
+  <!-- Admin Page -->
   <div id="adminSection" class="section">
-    <button id="menuToggle">☰</button>
-    <div class="messages-layout">
-      <div class="name-list" id="nameList"></div>
-      <div class="main-gallery" id="adminGallery">
-        <p>Select a name from the menu to view their message</p>
-      </div>
+    <div class="admin-gallery" id="adminGallery">
+      <h2>Loading...</h2>
     </div>
+    <span class="arrow arrow-left" id="adminLeft">&#10094;</span>
+    <span class="arrow arrow-right" id="adminRight">&#10095;</span>
+    <button id="backBtn">Back</button>
   </div>
 </div>
 
@@ -241,161 +189,158 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let userName = "";
-let userMessage = "";
-let userPhotos = [null,null,null];
+let userName = "", userMessage = "", userPhotos = [null,null,null];
 let currentPreview = 0;
+let messagesArray = [];
+let currentMessageIndex = 0;
 const ADMIN_PASSCODE = "8080";
 
+// Navigation helpers
+function showSection(id){
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
 // Step 1
-document.getElementById("enterNameBtn").onclick = ()=>{
-  const name = document.getElementById("userNameInput").value.trim();
-  if(!name){alert("Enter name"); return;}
-  userName=name;
-  document.getElementById("nameSection").classList.remove("active");
-  document.getElementById("messageSection").classList.add("active");
+document.getElementById("enterNameBtn").onclick=()=>{
+  const n=document.getElementById("userNameInput").value.trim();
+  if(!n) return alert("Enter name");
+  userName=n; showSection("messageSection");
 };
 
 // Step 2
-document.getElementById("submitMsgBtn").onclick = ()=>{
-  const msg = document.getElementById("messageInput").value.trim();
-  if(!msg){alert("Enter message"); return;}
-  userMessage=msg;
+document.getElementById("submitMsgBtn").onclick=()=>{
+  const m=document.getElementById("messageInput").value.trim();
+  if(!m) return alert("Enter message");
+  userMessage=m;
   setupPhotoButtons();
-  document.getElementById("messageSection").classList.remove("active");
-  document.getElementById("photoSection").classList.add("active");
+  showSection("photoSection");
 };
 
-// Step 3: Photo Buttons
+// Step 3
 function setupPhotoButtons(){
-  const container = document.getElementById("photoButtons");
-  container.innerHTML="";
+  const cont=document.getElementById("photoButtons");
+  cont.innerHTML="";
   for(let i=0;i<3;i++){
-    const btn = document.createElement("label");
-    btn.className="photo-btn";
-    btn.innerHTML=`<span>+ Add Image ${i+1}</span><input type="file" accept="image/*" data-index="${i}">`;
-    container.appendChild(btn);
+    const lbl=document.createElement("label");
+    lbl.className="photo-btn";
+    lbl.innerHTML=`<span>+ Add Image ${i+1}</span><input type="file" accept="image/*" data-index="${i}">`;
+    cont.appendChild(lbl);
   }
-  document.querySelectorAll(".photo-btn input").forEach(input=>{
-    input.onchange = e=>{
-      const file = e.target.files[0];
-      const index = e.target.dataset.index;
+  document.querySelectorAll(".photo-btn input").forEach(inp=>{
+    inp.onchange=e=>{
+      const file=e.target.files[0];
+      const idx=e.target.dataset.index;
       if(file){
-        const reader = new FileReader();
-        reader.onload = ()=>{
-          userPhotos[index]=reader.result;
-          const label = e.target.parentElement;
-          label.innerHTML=`<img src="${reader.result}" alt="Photo ${index+1}"><input type="file" accept="image/*" data-index="${index}">`;
-          label.querySelector("input").onchange = input.onchange;
+        const r=new FileReader();
+        r.onload=()=>{
+          userPhotos[idx]=r.result;
+          const l=e.target.parentElement;
+          l.innerHTML=`<img src="${r.result}"><input type="file" accept="image/*" data-index="${idx}">`;
+          l.querySelector("input").onchange=inp.onchange;
         };
-        reader.readAsDataURL(file);
+        r.readAsDataURL(file);
       }
     };
   });
 }
-
-// Step 3 → 4
-document.getElementById("nextPhotoBtn").onclick = document.getElementById("skipBtn").onclick = ()=>{
-  showPreview();
-  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-  document.getElementById("previewSection").classList.add("active");
+document.getElementById("nextPhotoBtn").onclick=
+document.getElementById("skipBtn").onclick=()=>{
+  showPreview(); showSection("previewSection");
 };
 
 // Preview
 function showPreview(){
-  const gallery = document.getElementById("previewGallery");
-  gallery.innerHTML="";
-  const images = userPhotos.filter(p=>p);
-  gallery.innerHTML=`<h2 class="preview-name">From: ${userName}</h2>`;
-  if(images.length){
-    const img = document.createElement("img");
-    img.src = images[currentPreview];
-    img.className="preview-img";
-    gallery.appendChild(img);
-    const msgDiv = document.createElement("div");
-    msgDiv.className="message-text-preview";
-    msgDiv.textContent = userMessage;
-    gallery.appendChild(msgDiv);
-    if(images.length>1){
-      const left = document.createElement("button");
-      left.innerHTML="&#10094;"; left.className="arrow arrow-left";
-      left.onclick=()=>{currentPreview=(currentPreview-1+images.length)%images.length; showPreview();};
-      const right = document.createElement("button");
-      right.innerHTML="&#10095;"; right.className="arrow arrow-right";
-      right.onclick=()=>{currentPreview=(currentPreview+1)%images.length; showPreview();};
-      gallery.appendChild(left); gallery.appendChild(right);
+  const g=document.getElementById("previewGallery");
+  g.innerHTML="";
+  const imgs=userPhotos.filter(p=>p);
+  g.innerHTML=`<h2 class="preview-name">From: ${userName}</h2>`;
+  if(imgs.length){
+    const im=document.createElement("img");
+    im.src=imgs[currentPreview];
+    im.className="preview-img";
+    g.appendChild(im);
+    const msg=document.createElement("div");
+    msg.className="message-text-preview";
+    msg.textContent=userMessage;
+    g.appendChild(msg);
+    if(imgs.length>1){
+      const L=document.createElement("span");L.className="arrow arrow-left";L.innerHTML="&#10094;";
+      const R=document.createElement("span");R.className="arrow arrow-right";R.innerHTML="&#10095;";
+      L.onclick=()=>{currentPreview=(currentPreview-1+imgs.length)%imgs.length;showPreview();};
+      R.onclick=()=>{currentPreview=(currentPreview+1)%imgs.length;showPreview();};
+      g.appendChild(L);g.appendChild(R);
     }
   } else {
-    const msgDiv = document.createElement("div");
-    msgDiv.className="message-text-preview";
-    msgDiv.textContent=userMessage;
-    gallery.appendChild(msgDiv);
+    const msg=document.createElement("div");
+    msg.className="message-text-preview";msg.textContent=userMessage;
+    g.appendChild(msg);
   }
 }
-
-// Back button
-document.getElementById("backToPhotoBtn").onclick = ()=>{
-  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-  document.getElementById("photoSection").classList.add("active");
-};
+document.getElementById("backToPhotoBtn").onclick=()=>showSection("photoSection");
 
 // Submit
-document.getElementById("finalSubmitBtn").onclick = ()=>{
+document.getElementById("finalSubmitBtn").onclick=()=>{
   db.ref("messages").push({
-    name:userName,
-    message:userMessage,
+    name:userName,message:userMessage,
     photos:userPhotos.filter(p=>p),
     timestamp:new Date().toISOString()
   });
-  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-  document.getElementById("thankYouSection").classList.add("active");
+  showSection("thankYouSection");
 };
 
-// Admin buttons
-["adminBtn"].forEach(id=>{
-  document.getElementById(id).onclick = async ()=>{
-    const code = prompt("Enter admin passcode:");
-    if(code!==ADMIN_PASSCODE){alert("Incorrect"); return;}
-    document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-    document.getElementById("adminSection").classList.add("active");
-    const snapshot = await db.ref("messages").once("value");
-    const messages = snapshot.val()||{};
-    const nameList=document.getElementById("nameList");
-    const adminGallery=document.getElementById("adminGallery");
-    nameList.innerHTML="";
-    adminGallery.innerHTML="<p>Select a name to view their message</p>";
-    Object.entries(messages).forEach(([key,msg])=>{
-      const item = document.createElement("div");
-      item.className="name-item"; item.textContent=msg.name;
-      item.onclick=()=>{
-        adminGallery.innerHTML="";
-        const box = document.createElement("div"); box.className="preview-box";
-        box.innerHTML=`<div class="preview-name">From: ${msg.name}</div>`;
-        if(msg.photos) msg.photos.forEach(p=>{
-          const img = document.createElement("img"); img.src=p;
-          box.appendChild(img);
-        });
-        const text = document.createElement("div"); text.className="message-text-preview"; text.textContent=msg.message;
-        box.appendChild(text);
-        const del = document.createElement("button"); del.className="delete-btn"; del.textContent="Delete";
-        del.onclick=async ()=>{
-          if(confirm("Delete this message?")){
-            await db.ref("messages/"+key).remove();
-            item.remove(); adminGallery.innerHTML="<p>Deleted.</p>";
-          }
-        };
-        box.appendChild(del);
-        adminGallery.appendChild(box);
-      };
-      nameList.appendChild(item);
-    });
-  };
-});
+// Admin
+document.getElementById("adminBtn").onclick=async()=>{
+  const code=prompt("Enter admin passcode:");
+  if(code!==ADMIN_PASSCODE) return alert("Incorrect");
+  const snap=await db.ref("messages").once("value");
+  const data=snap.val()||{};
+  messagesArray=Object.entries(data);
+  currentMessageIndex=0;
+  showAdminMessage();
+  showSection("adminSection");
+};
 
-// Hamburger toggle
-const menuToggle = document.getElementById("menuToggle");
-const nameList = document.getElementById("nameList");
-menuToggle.onclick = ()=> nameList.classList.toggle("show");
+function showAdminMessage(){
+  const g=document.getElementById("adminGallery");
+  if(messagesArray.length===0){g.innerHTML="<p>No messages yet.</p>";return;}
+  const [key,msg]=messagesArray[currentMessageIndex];
+  g.innerHTML="";
+  const box=document.createElement("div");box.className="preview-box";
+  box.innerHTML=`<div class="preview-name">From: ${msg.name}</div>`;
+  if(msg.photos){
+    msg.photos.forEach(p=>{
+      const im=document.createElement("img");im.src=p;box.appendChild(im);
+    });
+  }
+  const t=document.createElement("div");t.className="message-text-preview";t.textContent=msg.message;box.appendChild(t);
+  const del=document.createElement("button");del.className="delete-btn";del.textContent="Delete";
+  del.onclick=async()=>{
+    if(confirm("Delete this message?")){
+      await db.ref("messages/"+key).remove();
+      messagesArray.splice(currentMessageIndex,1);
+      if(currentMessageIndex>=messagesArray.length) currentMessageIndex=0;
+      showAdminMessage();
+    }
+  };
+  box.appendChild(del);
+  g.appendChild(box);
+}
+
+// Admin navigation arrows
+document.getElementById("adminLeft").onclick=()=>{
+  if(messagesArray.length<=1) return;
+  currentMessageIndex=(currentMessageIndex-1+messagesArray.length)%messagesArray.length;
+  showAdminMessage();
+};
+document.getElementById("adminRight").onclick=()=>{
+  if(messagesArray.length<=1) return;
+  currentMessageIndex=(currentMessageIndex+1)%messagesArray.length;
+  showAdminMessage();
+};
+
+// Back
+document.getElementById("backBtn").onclick=()=>showSection("nameSection");
 </script>
 </body>
 </html>
