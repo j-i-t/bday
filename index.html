@@ -102,6 +102,11 @@ button:hover { opacity:0.85; }
   font-weight: 700;
   margin-bottom: 8px;
 }
+.timestamp {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-bottom: 10px;
+}
 .delete-btn {
   background:#f44336;
   color:white;
@@ -195,7 +200,6 @@ let messagesArray = [];
 let currentMessageIndex = 0;
 const ADMIN_PASSCODE = "8080";
 
-// Navigation helpers
 function showSection(id){
   document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
@@ -301,13 +305,19 @@ document.getElementById("adminBtn").onclick=async()=>{
   showSection("adminSection");
 };
 
+function formatTimestamp(isoString){
+  const date=new Date(isoString);
+  return date.toLocaleString(); // shows full date and time down to seconds
+}
+
 function showAdminMessage(){
   const g=document.getElementById("adminGallery");
   if(messagesArray.length===0){g.innerHTML="<p>No messages yet.</p>";return;}
   const [key,msg]=messagesArray[currentMessageIndex];
   g.innerHTML="";
   const box=document.createElement("div");box.className="preview-box";
-  box.innerHTML=`<div class="preview-name">From: ${msg.name}</div>`;
+  box.innerHTML=`<div class="preview-name">From: ${msg.name}</div>
+                 <div class="timestamp">Submitted: ${formatTimestamp(msg.timestamp || new Date().toISOString())}</div>`;
   if(msg.photos){
     msg.photos.forEach(p=>{
       const im=document.createElement("img");im.src=p;box.appendChild(im);
