@@ -32,7 +32,7 @@ input:focus, textarea:focus { outline:none; border-color:var(--accent); }
 textarea { min-height:80px; resize:vertical; }
 button { cursor:pointer; border:none; font-weight:600; }
 button:hover { opacity:0.85; }
-#enterNameBtn, #submitMsgBtn, #nextPhotoBtn, #finalSubmitBtn, #backToPhotoBtn, #skipBtn, #adminBtn { 
+#enterNameBtn, #submitMsgBtn, #nextPhotoBtn, #finalSubmitBtn, #backToPhotoBtn, #skipBtn, #adminBtn, #backBtn { 
   background: var(--accent); color: var(--bg); margin-top:5px; 
 }
 
@@ -102,11 +102,6 @@ button:hover { opacity:0.85; }
   font-weight: 700;
   margin-bottom: 8px;
 }
-.timestamp {
-  font-size: 0.9rem;
-  color: #aaa;
-  margin-bottom: 10px;
-}
 .delete-btn {
   background:#f44336;
   color:white;
@@ -117,6 +112,14 @@ button:hover { opacity:0.85; }
   margin-top:5px;
 }
 .delete-btn:hover { background:#d32f2f; }
+
+/* Timestamp */
+.timestamp {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-top: 6px;
+  text-align: center;
+}
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -200,6 +203,7 @@ let messagesArray = [];
 let currentMessageIndex = 0;
 const ADMIN_PASSCODE = "8080";
 
+// Navigation helpers
 function showSection(id){
   document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
@@ -305,25 +309,27 @@ document.getElementById("adminBtn").onclick=async()=>{
   showSection("adminSection");
 };
 
-function formatTimestamp(isoString){
-  const date=new Date(isoString);
-  return date.toLocaleString(); // shows full date and time down to seconds
-}
-
 function showAdminMessage(){
   const g=document.getElementById("adminGallery");
   if(messagesArray.length===0){g.innerHTML="<p>No messages yet.</p>";return;}
   const [key,msg]=messagesArray[currentMessageIndex];
   g.innerHTML="";
   const box=document.createElement("div");box.className="preview-box";
-  box.innerHTML=`<div class="preview-name">From: ${msg.name}</div>
-                 <div class="timestamp">Submitted: ${formatTimestamp(msg.timestamp || new Date().toISOString())}</div>`;
+  box.innerHTML=`<div class="preview-name">From: ${msg.name}</div>`;
   if(msg.photos){
     msg.photos.forEach(p=>{
       const im=document.createElement("img");im.src=p;box.appendChild(im);
     });
   }
   const t=document.createElement("div");t.className="message-text-preview";t.textContent=msg.message;box.appendChild(t);
+
+  // ✅ Add timestamp display
+  const timeDiv=document.createElement("div");
+  const time=new Date(msg.timestamp);
+  timeDiv.className="timestamp";
+  timeDiv.textContent=`Submitted on: ${time.toLocaleString()}`;
+  box.appendChild(timeDiv);
+
   const del=document.createElement("button");del.className="delete-btn";del.textContent="Delete";
   del.onclick=async()=>{
     if(confirm("Delete this message?")){
