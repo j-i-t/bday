@@ -304,6 +304,7 @@ document.getElementById("adminBtn").onclick=async()=>{
   const snap=await db.ref("messages").once("value");
   const data=snap.val()||{};
   messagesArray=Object.entries(data);
+  messagesArray.reverse();
   currentMessageIndex=0;
   showAdminMessage();
   showSection("adminSection");
@@ -360,5 +361,6 @@ document.getElementById("backBtn").onclick=()=>showSection("nameSection");
 </script>
 </body>
 </html>
+
 
 
